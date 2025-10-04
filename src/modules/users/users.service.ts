@@ -11,6 +11,7 @@ import { NodeEntity, NodeType } from 'src/entities/node.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
+import { UserOrganization } from 'src/interfaces';
 
 @Injectable()
 export class UsersService {
@@ -107,5 +108,27 @@ export class UsersService {
     }
 
     await this.closureRepository.save(newLinks);
+  }
+
+  async getUserOrganizations(userId: string): Promise<UserOrganization[]> {
+    const user = await this.nodeRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User ${userId} not found`);
+    }
+    if (user.type !== NodeType.USER) {
+      throw new NotFoundException(`Node ${userId} is not a USER`);
+    }
+
+    const ancestors = await this.closureRepository
+      .createQueryBuilder('closure')
+      .innerJoin(NodeEntity, 'node', 'node.id = closure.ancestorId')
+      .where('closure.descendantId = :userId', { userId })
+      .andWhere('closure.depth >= 1')
+      .andWhere('node.type = :type', { type: NodeType.GROUP })
+      .select(['node.id AS id', 'node.name AS name', 'closure.depth AS depth'])
+      .orderBy('closure.depth', 'ASC')
+      .getRawMany<UserOrganization>();
+
+    return ancestors;
   }
 }

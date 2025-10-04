@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -26,5 +27,12 @@ export class UsersController {
     @Body() dto: AddUserToGroupDto,
   ) {
     return this.usersService.addUserToGroup(id, dto);
+  }
+
+  @Get(':id/organizations')
+  getUserOrganizations(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.usersService.getUserOrganizations(id);
   }
 }
