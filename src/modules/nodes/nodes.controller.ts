@@ -1,7 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { NodesService } from './nodes.service';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { NodesDto } from './dto/nodes.dto';
 
 @ApiTags('nodes')
 @Controller('nodes')
@@ -14,7 +13,6 @@ export class NodesController {
   @ApiResponse({
     status: 200,
     description: 'List of ancestor nodes ordered by depth',
-    type: [NodesDto],
   })
   @ApiResponse({
     status: 400,
@@ -31,7 +29,6 @@ export class NodesController {
   @ApiResponse({
     status: 200,
     description: 'List of descendant nodes ordered by depth',
-    type: [NodesDto],
   })
   @ApiResponse({
     status: 400,
