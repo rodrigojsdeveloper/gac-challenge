@@ -1,27 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity } from 'src/entities/node.entity';
-import { Repository } from 'typeorm';
 import { NodesDto } from './dto/nodes.dto';
+import { RepositoriesService } from 'src/repositories';
 
 @Injectable()
 export class NodesService {
-  constructor(
-    @InjectRepository(NodeEntity)
-    private readonly nodeRepository: Repository<NodeEntity>,
-
-    @InjectRepository(ClosureEntity)
-    private readonly closureRepository: Repository<ClosureEntity>,
-  ) {}
+  constructor(private readonly repos: RepositoriesService) {}
 
   async getAncestors(nodeId: string): Promise<NodesDto[]> {
-    const node = await this.nodeRepository.findOne({ where: { id: nodeId } });
+    const node = await this.repos.nodeRepository.findOne({
+      where: { id: nodeId },
+    });
     if (!node) {
       throw new NotFoundException('Node not found');
     }
 
-    const ancestors = await this.closureRepository
+    const ancestors = await this.repos.closureRepository
       .createQueryBuilder('closure')
       .innerJoin(NodeEntity, 'node', 'node.id = closure.ancestor_id')
       .where('closure.descendant_id = :nodeId', { nodeId })
@@ -39,12 +33,14 @@ export class NodesService {
   }
 
   async getDescendants(nodeId: string): Promise<NodesDto[]> {
-    const node = await this.nodeRepository.findOne({ where: { id: nodeId } });
+    const node = await this.repos.nodeRepository.findOne({
+      where: { id: nodeId },
+    });
     if (!node) {
       throw new NotFoundException('Node not found');
     }
 
-    const descendants = await this.closureRepository
+    const descendants = await this.repos.closureRepository
       .createQueryBuilder('closure')
       .innerJoin(NodeEntity, 'node', 'node.id = closure.descendant_id')
       .where('closure.ancestor_id = :nodeId', { nodeId })

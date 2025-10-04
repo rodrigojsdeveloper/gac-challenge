@@ -5,40 +5,33 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity, NodeType } from 'src/entities/node.entity';
-import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
 import { UserOrganizationDto } from './dto/user-organization.dto';
+import { RepositoriesService } from 'src/repositories';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(NodeEntity)
-    private readonly nodeRepository: Repository<NodeEntity>,
-
-    @InjectRepository(ClosureEntity)
-    private readonly closureRepository: Repository<ClosureEntity>,
-  ) {}
+  constructor(private readonly repos: RepositoriesService) {}
 
   async create(dto: CreateUserDto) {
     const { name, email } = dto;
 
-    const existingUser = await this.nodeRepository.findOneBy({ email });
+    const existingUser = await this.repos.nodeRepository.findOneBy({ email });
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
 
-    const user = this.nodeRepository.create({
+    const user = this.repos.nodeRepository.create({
       type: NodeType.USER,
       name,
       email,
     });
-    await this.nodeRepository.save(user);
+    await this.repos.nodeRepository.save(user);
 
-    await this.closureRepository.save({
+    await this.repos.closureRepository.save({
       ancestorId: user.id,
       descendantId: user.id,
       depth: 0,
@@ -50,7 +43,9 @@ export class UsersService {
   async addUserToGroup(userId: string, dto: AddUserToGroupDto) {
     const { groupId } = dto;
 
-    const user = await this.nodeRepository.findOne({ where: { id: userId } });
+    const user = await this.repos.nodeRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -58,7 +53,9 @@ export class UsersService {
       throw new BadRequestException('Node is not a USER');
     }
 
-    const group = await this.nodeRepository.findOne({ where: { id: groupId } });
+    const group = await this.repos.nodeRepository.findOne({
+      where: { id: groupId },
+    });
     if (!group) {
       throw new NotFoundException('Group not found');
     }
@@ -66,14 +63,14 @@ export class UsersService {
       throw new BadRequestException('Node is not a GROUP');
     }
 
-    const existing = await this.closureRepository.findOne({
+    const existing = await this.repos.closureRepository.findOne({
       where: { ancestorId: groupId, descendantId: userId },
     });
     if (existing) {
       throw new ConflictException('User already belongs to group');
     }
 
-    const groupAncestors = await this.closureRepository.find({
+    const groupAncestors = await this.repos.closureRepository.find({
       where: { descendantId: groupId },
     });
     if (groupAncestors.some((a) => a.ancestorId === userId)) {
@@ -84,7 +81,7 @@ export class UsersService {
 
     for (const ancestor of groupAncestors) {
       newLinks.push(
-        this.closureRepository.create({
+        this.repos.closureRepository.create({
           ancestorId: ancestor.ancestorId,
           descendantId: userId,
           depth: ancestor.depth + 1,
@@ -92,12 +89,12 @@ export class UsersService {
       );
     }
 
-    const userSelf = await this.closureRepository.findOne({
+    const userSelf = await this.repos.closureRepository.findOne({
       where: { ancestorId: userId, descendantId: userId },
     });
     if (!userSelf) {
       newLinks.push(
-        this.closureRepository.create({
+        this.repos.closureRepository.create({
           ancestorId: userId,
           descendantId: userId,
           depth: 0,
@@ -105,11 +102,13 @@ export class UsersService {
       );
     }
 
-    await this.closureRepository.save(newLinks);
+    await this.repos.closureRepository.save(newLinks);
   }
 
   async getUserOrganizations(userId: string): Promise<UserOrganizationDto[]> {
-    const user = await this.nodeRepository.findOne({ where: { id: userId } });
+    const user = await this.repos.nodeRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -117,7 +116,7 @@ export class UsersService {
       throw new BadRequestException('Node is not a USER');
     }
 
-    const ancestors = await this.closureRepository
+    const ancestors = await this.repos.closureRepository
       .createQueryBuilder('closure')
       .innerJoin(NodeEntity, 'node', 'node.id = closure.ancestor_id')
       .where('closure.descendant_id = :userId', { userId })
