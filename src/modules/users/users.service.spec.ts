@@ -1,6 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersService } from './users.service';
-import { RepositoriesService } from 'src/repositories';
 import {
   BadRequestException,
   ConflictException,
@@ -8,31 +6,18 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { NodeType } from 'src/entities/node.entity';
+import { RepositoriesService } from 'src/repositories';
+import { UsersService } from './users.service';
+import { mockRepositoriesService } from 'test/mocks/repositories.mock';
 
-interface ClosureProps {
+type ClosureProps = {
   ancestorId: string;
   descendantId: string;
   depth: number;
-}
+};
 
 describe('UsersService', () => {
   let service: UsersService;
-
-  const mockRepositoriesService = {
-    nodeRepository: {
-      findOne: jest.fn(),
-      findOneBy: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-    },
-    closureRepository: {
-      findOne: jest.fn(),
-      find: jest.fn(),
-      save: jest.fn(),
-      create: jest.fn(),
-      createQueryBuilder: jest.fn(),
-    },
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

@@ -1,20 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NodesService } from './nodes.service';
-import { RepositoriesService } from 'src/repositories';
 import { NotFoundException } from '@nestjs/common';
 import { NodeType } from 'src/entities/node.entity';
+import { RepositoriesService } from 'src/repositories';
+import { NodesService } from './nodes.service';
+import { mockRepositoriesService } from 'test/mocks/repositories.mock';
 
-describe('NodesController', () => {
+describe('NodesService', () => {
   let service: NodesService;
-
-  const mockRepositoriesService = {
-    nodeRepository: {
-      findOne: jest.fn(),
-    },
-    closureRepository: {
-      createQueryBuilder: jest.fn(),
-    },
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

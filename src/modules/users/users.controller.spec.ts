@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
-import { NodeType } from 'src/entities/node.entity';
 import {
   BadRequestException,
   ConflictException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { NodeType } from 'src/entities/node.entity';
+import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
 
 describe('UsersController', () => {
   let controller: UsersController;

@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NodesController } from './nodes.controller';
-import { NodesService } from './nodes.service';
-import { NodeType } from 'src/entities/node.entity';
 import { NotFoundException } from '@nestjs/common';
+import { NodeType } from 'src/entities/node.entity';
+import { NodesService } from './nodes.service';
+import { NodesController } from './nodes.controller';
 
 describe('NodesController', () => {
   let controller: NodesController;
