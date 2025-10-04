@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity, NodeType } from 'src/entities/node.entity';
@@ -16,7 +16,16 @@ export class GroupsService {
   ) {}
 
   async create(dto: CreateGroupDto) {
-    const { name } = dto;
+    const { name, parentId } = dto;
+
+    if (parentId) {
+      const parent = await this.nodeRepository.findOne({
+        where: { id: parentId, type: NodeType.GROUP },
+      });
+      if (!parent) {
+        throw new NotFoundException(`Parent group ${parentId} not found`);
+      }
+    }
 
     const group = this.nodeRepository.create({
       type: NodeType.GROUP,
@@ -30,6 +39,23 @@ export class GroupsService {
       depth: 0,
     });
 
-    return group;
+    if (parentId) {
+      const parentAncestors = await this.closureRepository.find({
+        where: { descendantId: parentId },
+      });
+
+      const links = parentAncestors.map((pa) => ({
+        ancestorId: pa.ancestorId,
+        descendantId: group.id,
+        depth: pa.depth + 1,
+      }));
+
+      await this.closureRepository.save(links);
+    }
+
+    return {
+      ...group,
+      parentId: parentId ?? null,
+    };
   }
 }
