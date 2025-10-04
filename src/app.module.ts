@@ -5,6 +5,7 @@ import { UsersModule } from './modules/users/users.module';
 import { NodeEntity } from './entities/node.entity';
 import { ClosureEntity } from './entities/closure.entity';
 import { GroupsModule } from './modules/groups/groups.module';
+import { NodesModule } from './modules/nodes/nodes.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GroupsModule } from './modules/groups/groups.module';
     }),
     UsersModule,
     GroupsModule,
+    NodesModule,
   ],
   controllers: [],
   providers: [],

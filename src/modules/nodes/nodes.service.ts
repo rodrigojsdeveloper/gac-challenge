@@ -1,0 +1,40 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ClosureEntity } from 'src/entities/closure.entity';
+import { NodeEntity } from 'src/entities/node.entity';
+import { NodesProps } from 'src/interfaces';
+import { Repository } from 'typeorm';
+
+@Injectable()
+export class NodesService {
+  constructor(
+    @InjectRepository(NodeEntity)
+    private readonly nodeRepository: Repository<NodeEntity>,
+
+    @InjectRepository(ClosureEntity)
+    private readonly closureRepository: Repository<ClosureEntity>,
+  ) {}
+
+  async getAncestors(nodeId: string): Promise<NodesProps[]> {
+    const node = await this.nodeRepository.findOne({ where: { id: nodeId } });
+    if (!node) {
+      throw new NotFoundException(`Node ${nodeId} not found`);
+    }
+
+    const ancestors = await this.closureRepository
+      .createQueryBuilder('closure')
+      .innerJoin(NodeEntity, 'node', 'node.id = closure.ancestorId')
+      .where('closure.descendantId = :nodeId', { nodeId })
+      .andWhere('closure.depth >= 1')
+      .select([
+        'node.id AS id',
+        'node.name AS name',
+        'node.type AS type',
+        'closure.depth AS depth',
+      ])
+      .orderBy('closure.depth', 'ASC')
+      .getRawMany<NodesProps>();
+
+    return ancestors;
+  }
+}
