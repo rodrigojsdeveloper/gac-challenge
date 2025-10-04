@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { NodeEntity } from './entities/node.entity';
 import { ClosureEntity } from './entities/closure.entity';
+import { GroupsModule } from './modules/groups/groups.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ClosureEntity } from './entities/closure.entity';
       synchronize: false,
     }),
     UsersModule,
+    GroupsModule,
   ],
   controllers: [],
   providers: [],

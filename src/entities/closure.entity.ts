@@ -1,14 +1,35 @@
-import { Column, Entity, PrimaryColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
+import { NodeEntity } from './node.entity';
 
 @Entity('closure')
-@Unique(['ancestorId', 'descendantId'])
 export class ClosureEntity {
-  @PrimaryColumn()
-  ancestorId: number;
+  @PrimaryColumn('uuid', { name: 'ancestor_id' })
+  ancestorId: string;
 
-  @PrimaryColumn()
-  descendantId: number;
+  @PrimaryColumn('uuid', { name: 'descendant_id' })
+  descendantId: string;
 
-  @Column()
+  @Column({
+    type: 'int',
+    nullable: false,
+  })
   depth: number;
+
+  @ManyToOne(() => NodeEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'ancestor_id' })
+  ancestor: NodeEntity;
+
+  @ManyToOne(() => NodeEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'descendant_id' })
+  descendant: NodeEntity;
+
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at', nullable: false })
+  createdAt: Date;
 }

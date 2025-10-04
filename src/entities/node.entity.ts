@@ -1,4 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum NodeType {
   USER = 'USER',
@@ -7,15 +13,32 @@ export enum NodeType {
 
 @Entity('nodes')
 export class NodeEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ type: 'enum', enum: ['USER', 'GROUP'] })
-  type: 'USER' | 'GROUP';
+  @Column({
+    type: 'enum',
+    enum: NodeType,
+    nullable: false,
+  })
+  type: NodeType;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    nullable: false,
+  })
   name: string;
 
-  @Column({ nullable: true, unique: true })
+  @Column({
+    type: 'varchar',
+    unique: true,
+    nullable: true,
+  })
   email?: string;
+
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at', nullable: false })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', nullable: true })
+  updatedAt?: Date;
 }

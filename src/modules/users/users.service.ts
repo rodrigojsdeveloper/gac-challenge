@@ -20,7 +20,7 @@ export class UsersService {
 
     const existingUser = await this.nodeRepository.findOneBy({ email });
     if (existingUser) {
-      throw new ConflictException('Email já está em uso.');
+      throw new ConflictException('Email already exists');
     }
 
     const user = this.nodeRepository.create({
