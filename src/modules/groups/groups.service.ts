@@ -1,25 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ClosureEntity } from 'src/entities/closure.entity';
-import { NodeEntity, NodeType } from 'src/entities/node.entity';
-import { Repository } from 'typeorm';
+import { NodeType } from 'src/entities/node.entity';
 import { CreateGroupDto } from './dto/create-group.dto';
+import { RepositoriesService } from 'src/repositories';
 
 @Injectable()
 export class GroupsService {
-  constructor(
-    @InjectRepository(NodeEntity)
-    private readonly nodeRepository: Repository<NodeEntity>,
-
-    @InjectRepository(ClosureEntity)
-    private readonly closureRepository: Repository<ClosureEntity>,
-  ) {}
+  constructor(private readonly repos: RepositoriesService) {}
 
   async create(dto: CreateGroupDto) {
     const { name, parentId } = dto;
 
     if (parentId) {
-      const parent = await this.nodeRepository.findOne({
+      const parent = await this.repos.nodeRepository.findOne({
         where: { id: parentId, type: NodeType.GROUP },
       });
       if (!parent) {
@@ -27,20 +19,20 @@ export class GroupsService {
       }
     }
 
-    const group = this.nodeRepository.create({
+    const group = this.repos.nodeRepository.create({
       type: NodeType.GROUP,
       name,
     });
-    await this.nodeRepository.save(group);
+    await this.repos.nodeRepository.save(group);
 
-    await this.closureRepository.save({
+    await this.repos.closureRepository.save({
       ancestorId: group.id,
       descendantId: group.id,
       depth: 0,
     });
 
     if (parentId) {
-      const parentAncestors = await this.closureRepository.find({
+      const parentAncestors = await this.repos.closureRepository.find({
         where: { descendantId: parentId },
       });
 
@@ -50,7 +42,7 @@ export class GroupsService {
         depth: pa.depth + 1,
       }));
 
-      await this.closureRepository.save(links);
+      await this.repos.closureRepository.save(links);
     }
 
     return {
