@@ -121,8 +121,8 @@ export class UsersService {
 
     const ancestors = await this.closureRepository
       .createQueryBuilder('closure')
-      .innerJoin(NodeEntity, 'node', 'node.id = closure.ancestorId')
-      .where('closure.descendantId = :userId', { userId })
+      .innerJoin(NodeEntity, 'node', 'node.id = closure.ancestor_id')
+      .where('closure.descendant_id = :userId', { userId })
       .andWhere('closure.depth >= 1')
       .andWhere('node.type = :type', { type: NodeType.GROUP })
       .select(['node.id AS id', 'node.name AS name', 'closure.depth AS depth'])

@@ -9,4 +9,9 @@ export class NodesController {
   getAncestors(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.nodesService.getAncestors(id);
   }
+
+  @Get(':id/descendants')
+  getDescendants(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.nodesService.getDescendants(id);
+  }
 }
