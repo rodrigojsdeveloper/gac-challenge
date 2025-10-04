@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity } from 'src/entities/node.entity';
 import { Repository } from 'typeorm';
-import { NodesDto } from './dto/node.dto';
+import { NodesDto } from './dto/nodes.dto';
 
 @Injectable()
 export class NodesService {
@@ -18,7 +18,7 @@ export class NodesService {
   async getAncestors(nodeId: string): Promise<NodesDto[]> {
     const node = await this.nodeRepository.findOne({ where: { id: nodeId } });
     if (!node) {
-      throw new NotFoundException('Node not found.');
+      throw new NotFoundException('Node not found');
     }
 
     const ancestors = await this.closureRepository
@@ -41,7 +41,7 @@ export class NodesService {
   async getDescendants(nodeId: string): Promise<NodesDto[]> {
     const node = await this.nodeRepository.findOne({ where: { id: nodeId } });
     if (!node) {
-      throw new NotFoundException('Node not found.');
+      throw new NotFoundException('Node not found');
     }
 
     const descendants = await this.closureRepository

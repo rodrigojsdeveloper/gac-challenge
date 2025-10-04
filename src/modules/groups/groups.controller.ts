@@ -11,8 +11,9 @@ export class GroupsController {
   @Post()
   @ApiOperation({ summary: 'Create group' })
   @ApiBody({ type: CreateGroupDto })
-  @ApiResponse({ status: 201, description: 'Group created successfully.' })
-  @ApiResponse({ status: 404, description: 'Parent group not found.' })
+  @ApiResponse({ status: 201, description: 'Group created successfully' })
+  @ApiResponse({ status: 400, description: 'parentId must be a UUID' })
+  @ApiResponse({ status: 404, description: 'Parent group not found' })
   async create(@Body() dto: CreateGroupDto) {
     return this.groupsService.create(dto);
   }

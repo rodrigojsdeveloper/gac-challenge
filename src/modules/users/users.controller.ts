@@ -25,8 +25,8 @@ export class UsersController {
 
   @Post()
   @ApiOperation({ summary: 'Create user' })
-  @ApiResponse({ status: 201, description: 'User created successfully.' })
-  @ApiResponse({ status: 409, description: 'Email already exists.' })
+  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiBody({ type: CreateUserDto })
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
@@ -39,12 +39,12 @@ export class UsersController {
   @ApiBody({ type: AddUserToGroupDto })
   @ApiResponse({
     status: 204,
-    description: 'User successfully joined group.',
+    description: 'User successfully joined group',
   })
-  @ApiResponse({ status: 400, description: 'Node is not a USER or GROUP.' })
-  @ApiResponse({ status: 404, description: 'User or Group not found.' })
-  @ApiResponse({ status: 409, description: 'User already belongs to group.' })
-  @ApiResponse({ status: 422, description: 'Cyclic relationship detected.' })
+  @ApiResponse({ status: 400, description: 'Node is not a USER or GROUP' })
+  @ApiResponse({ status: 404, description: 'User or Group not found' })
+  @ApiResponse({ status: 409, description: 'User already belongs to group' })
+  @ApiResponse({ status: 422, description: 'Cyclic relationship detected' })
   addUserToGroup(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddUserToGroupDto,
@@ -57,7 +57,7 @@ export class UsersController {
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({
     status: 200,
-    description: 'List of groups ordered by depth.',
+    description: 'List of groups ordered by depth',
     schema: {
       type: 'array',
       items: {
@@ -70,8 +70,8 @@ export class UsersController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Node is not a USER.' })
-  @ApiResponse({ status: 404, description: 'User not found.' })
+  @ApiResponse({ status: 400, description: 'Node is not a USER' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   getUserOrganizations(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.getUserOrganizations(id);
   }

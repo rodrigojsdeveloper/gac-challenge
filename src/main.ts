@@ -9,7 +9,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Organizational Units API')
     .setDescription(
-      'User and organizational unit management API (Closing Table).',
+      'User and organizational unit management API (Closing Table)',
     )
     .setVersion('1.0')
     .addTag('users', 'User creation and association operations')
@@ -17,7 +17,7 @@ async function bootstrap() {
     .addTag('nodes', 'Hierarchy queries (ancestors and descendants)')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('docs', app, document);
 
   app.useGlobalPipes(new ValidationPipe());
 
