@@ -7,16 +7,17 @@ import {
 } from '@nestjs/common';
 import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity, NodeType } from 'src/entities/node.entity';
+import { RepositoriesService } from 'src/repositories';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
-import { NodesDto } from '../nodes/dto/nodes.dto';
-import { RepositoriesService } from 'src/repositories';
+import { UserOrganizationDto } from './dto/user-organization.dto';
+import { UserNodeDto } from './dto/user-node.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly repos: RepositoriesService) {}
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto): Promise<UserNodeDto> {
     const { name, email } = dto;
 
     const existingUser = await this.repos.nodeRepository.findOneBy({ email });
@@ -37,10 +38,13 @@ export class UsersService {
       depth: 0,
     });
 
-    return user;
+    return {
+      ...user,
+      type: NodeType.USER,
+    };
   }
 
-  async addUserToGroup(userId: string, dto: AddUserToGroupDto) {
+  async addUserToGroup(userId: string, dto: AddUserToGroupDto): Promise<void> {
     const { groupId } = dto;
 
     const user = await this.repos.nodeRepository.findOne({
@@ -105,7 +109,7 @@ export class UsersService {
     await this.repos.closureRepository.save(newLinks);
   }
 
-  async getUserOrganizations(userId: string): Promise<NodesDto[]> {
+  async getUserOrganizations(userId: string): Promise<UserOrganizationDto[]> {
     const user = await this.repos.nodeRepository.findOne({
       where: { id: userId },
     });
@@ -124,7 +128,7 @@ export class UsersService {
       .andWhere('node.type = :type', { type: NodeType.GROUP })
       .select(['node.id AS id', 'node.name AS name', 'closure.depth AS depth'])
       .orderBy('closure.depth', 'ASC')
-      .getRawMany<NodesDto>();
+      .getRawMany<UserOrganizationDto>();
 
     return ancestors;
   }

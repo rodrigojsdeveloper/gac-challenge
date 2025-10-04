@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { NodeEntity } from 'src/entities/node.entity';
-import { NodesDto } from './dto/nodes.dto';
 import { RepositoriesService } from 'src/repositories';
+import { NodesDto } from './dto/nodes.dto';
 
 @Injectable()
 export class NodesService {

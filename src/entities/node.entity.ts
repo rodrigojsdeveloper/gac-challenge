@@ -16,17 +16,10 @@ export class NodeEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({
-    type: 'enum',
-    enum: NodeType,
-    nullable: false,
-  })
+  @Column({ type: 'enum', enum: NodeType })
   type: NodeType;
 
-  @Column({
-    type: 'varchar',
-    nullable: false,
-  })
+  @Column('varchar')
   name: string;
 
   @Column({
@@ -36,9 +29,9 @@ export class NodeEntity {
   })
   email?: string;
 
-  @CreateDateColumn({ type: 'timestamp', name: 'created_at', nullable: false })
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', nullable: true })
-  updatedAt?: Date;
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+  updatedAt: Date;
 }

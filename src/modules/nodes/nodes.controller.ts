@@ -1,6 +1,7 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
-import { NodesService } from './nodes.service';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { NodesService } from './nodes.service';
+import { NodesDto } from './dto/nodes.dto';
 
 @ApiTags('nodes')
 @Controller('nodes')
@@ -19,7 +20,7 @@ export class NodesController {
     description: 'Validation failed (uuid is expected)',
   })
   @ApiResponse({ status: 404, description: 'Node not found' })
-  getAncestors(@Param('id', ParseUUIDPipe) id: string) {
+  getAncestors(@Param('id', ParseUUIDPipe) id: string): Promise<NodesDto[]> {
     return this.nodesService.getAncestors(id);
   }
 
@@ -35,7 +36,7 @@ export class NodesController {
     description: 'Validation failed (uuid is expected)',
   })
   @ApiResponse({ status: 404, description: 'Node not found' })
-  getDescendants(@Param('id', ParseUUIDPipe) id: string) {
+  getDescendants(@Param('id', ParseUUIDPipe) id: string): Promise<NodesDto[]> {
     return this.nodesService.getDescendants(id);
   }
 }

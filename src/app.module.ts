@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
-import { NodeEntity } from './entities/node.entity';
-import { ClosureEntity } from './entities/closure.entity';
 import { GroupsModule } from './modules/groups/groups.module';
 import { NodesModule } from './modules/nodes/nodes.module';
+import { NodeEntity } from './entities/node.entity';
+import { ClosureEntity } from './entities/closure.entity';
 
 @Module({
   imports: [
@@ -22,7 +22,8 @@ import { NodesModule } from './modules/nodes/nodes.module';
       database: process.env.DB_NAME,
       entities: [NodeEntity, ClosureEntity],
       autoLoadEntities: true,
-      synchronize: false,
+      synchronize: process.env.NODE_ENV !== 'production',
+      logging: process.env.NODE_ENV !== 'production',
     }),
     UsersModule,
     GroupsModule,

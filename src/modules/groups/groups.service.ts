@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { NodeType } from 'src/entities/node.entity';
-import { CreateGroupDto } from './dto/create-group.dto';
 import { RepositoriesService } from 'src/repositories';
+import { CreateGroupDto } from './dto/create-group.dto';
+import { GroupNodeDto } from './dto/group-node.dto';
 
 @Injectable()
 export class GroupsService {
   constructor(private readonly repos: RepositoriesService) {}
 
-  async create(dto: CreateGroupDto) {
+  async create(dto: CreateGroupDto): Promise<GroupNodeDto> {
     const { name, parentId } = dto;
 
     if (parentId) {
@@ -47,6 +48,7 @@ export class GroupsService {
 
     return {
       ...group,
+      type: NodeType.GROUP,
       parentId: parentId ?? null,
     };
   }

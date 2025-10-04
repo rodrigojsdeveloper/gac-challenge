@@ -1,6 +1,5 @@
-export type NodesDto = {
+export type UserOrganizationDto = {
   id: string;
   name: string;
-  type: string;
   depth: number;
 };

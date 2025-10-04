@@ -8,8 +8,6 @@ import {
   Post,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
 import {
   ApiBody,
   ApiOperation,
@@ -17,6 +15,10 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { CreateUserDto } from './dto/create-user.dto';
+import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
+import { UserOrganizationDto } from './dto/user-organization.dto';
+import { UserNodeDto } from './dto/user-node.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -28,7 +30,7 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiBody({ type: CreateUserDto })
-  create(@Body() dto: CreateUserDto) {
+  create(@Body() dto: CreateUserDto): Promise<UserNodeDto> {
     return this.usersService.create(dto);
   }
 
@@ -48,7 +50,7 @@ export class UsersController {
   addUserToGroup(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddUserToGroupDto,
-  ) {
+  ): Promise<void> {
     return this.usersService.addUserToGroup(id, dto);
   }
 
@@ -72,7 +74,9 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Node is not a USER' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  getUserOrganizations(@Param('id', ParseUUIDPipe) id: string) {
+  getUserOrganizations(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<UserOrganizationDto[]> {
     return this.usersService.getUserOrganizations(id);
   }
 }

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
 import { NodeEntity } from 'src/entities/node.entity';
 import { ClosureEntity } from 'src/entities/closure.entity';
 import { RepositoriesService } from 'src/repositories';
+import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([NodeEntity, ClosureEntity])],

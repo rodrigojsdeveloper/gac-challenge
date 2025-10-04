@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateGroupDto {
@@ -10,11 +10,10 @@ export class CreateGroupDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Optional parent group ID',
     example: '550e8400-e29b-41d4-a716-446655440000',
     format: 'uuid',
-    required: false,
   })
   @IsOptional()
   @IsUUID()

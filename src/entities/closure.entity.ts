@@ -16,10 +16,7 @@ export class ClosureEntity {
   @PrimaryColumn('uuid', { name: 'descendant_id' })
   descendantId: string;
 
-  @Column({
-    type: 'int',
-    nullable: false,
-  })
+  @Column('int')
   depth: number;
 
   @ManyToOne(() => NodeEntity, { onDelete: 'CASCADE' })
@@ -30,6 +27,6 @@ export class ClosureEntity {
   @JoinColumn({ name: 'descendant_id' })
   descendant: NodeEntity;
 
-  @CreateDateColumn({ type: 'timestamp', name: 'created_at', nullable: false })
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 }
