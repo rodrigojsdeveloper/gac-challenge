@@ -9,7 +9,7 @@ import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity, NodeType } from 'src/entities/node.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
-import { UserOrganizationDto } from './dto/user-organization.dto';
+import { NodesDto } from '../nodes/dto/nodes.dto';
 import { RepositoriesService } from 'src/repositories';
 
 @Injectable()
@@ -105,7 +105,7 @@ export class UsersService {
     await this.repos.closureRepository.save(newLinks);
   }
 
-  async getUserOrganizations(userId: string): Promise<UserOrganizationDto[]> {
+  async getUserOrganizations(userId: string): Promise<NodesDto[]> {
     const user = await this.repos.nodeRepository.findOne({
       where: { id: userId },
     });
@@ -124,7 +124,7 @@ export class UsersService {
       .andWhere('node.type = :type', { type: NodeType.GROUP })
       .select(['node.id AS id', 'node.name AS name', 'closure.depth AS depth'])
       .orderBy('closure.depth', 'ASC')
-      .getRawMany<UserOrganizationDto>();
+      .getRawMany<NodesDto>();
 
     return ancestors;
   }

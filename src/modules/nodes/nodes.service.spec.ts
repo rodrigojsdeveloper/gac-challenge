@@ -16,6 +16,7 @@ describe('NodesController', () => {
     }).compile();
 
     service = module.get<NodesService>(NodesService);
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
