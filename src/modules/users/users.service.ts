@@ -28,7 +28,7 @@ export class UsersService {
 
     const existingUser = await this.nodeRepository.findOneBy({ email });
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Email already exists.');
     }
 
     const user = this.nodeRepository.create({
@@ -52,34 +52,32 @@ export class UsersService {
 
     const user = await this.nodeRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException(`User ${userId} not found`);
+      throw new NotFoundException('User not found.');
     }
     if (user.type !== NodeType.USER) {
-      throw new BadRequestException(`Node ${userId} is not a USER`);
+      throw new BadRequestException('Node is not a USER.');
     }
 
     const group = await this.nodeRepository.findOne({ where: { id: groupId } });
     if (!group) {
-      throw new NotFoundException(`Group ${groupId} not found`);
+      throw new NotFoundException('Group not found.');
     }
     if (group.type !== NodeType.GROUP) {
-      throw new BadRequestException(`Node ${groupId} is not a GROUP`);
+      throw new BadRequestException('Node is not a GROUP.');
     }
 
     const existing = await this.closureRepository.findOne({
       where: { ancestorId: groupId, descendantId: userId },
     });
     if (existing) {
-      throw new ConflictException(
-        `User ${userId} already belongs to group ${groupId}`,
-      );
+      throw new ConflictException('User already belongs to group.');
     }
 
     const groupAncestors = await this.closureRepository.find({
       where: { descendantId: groupId },
     });
     if (groupAncestors.some((a) => a.ancestorId === userId)) {
-      throw new UnprocessableEntityException(`Cyclic relationship detected`);
+      throw new UnprocessableEntityException('Cyclic relationship detected.');
     }
 
     const newLinks: ClosureEntity[] = [];
@@ -113,10 +111,10 @@ export class UsersService {
   async getUserOrganizations(userId: string): Promise<UserOrganizationProps[]> {
     const user = await this.nodeRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException(`User ${userId} not found`);
+      throw new NotFoundException('User not found.');
     }
     if (user.type !== NodeType.USER) {
-      throw new NotFoundException(`Node ${userId} is not a USER`);
+      throw new BadRequestException('Node is not a USER.');
     }
 
     const ancestors = await this.closureRepository
