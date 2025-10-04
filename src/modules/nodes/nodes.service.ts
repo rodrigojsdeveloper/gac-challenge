@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity } from 'src/entities/node.entity';
-import { NodesProps } from 'src/interfaces';
 import { Repository } from 'typeorm';
+import { NodesDto } from './dto/node.dto';
 
 @Injectable()
 export class NodesService {
@@ -15,10 +15,10 @@ export class NodesService {
     private readonly closureRepository: Repository<ClosureEntity>,
   ) {}
 
-  async getAncestors(nodeId: string): Promise<NodesProps[]> {
+  async getAncestors(nodeId: string): Promise<NodesDto[]> {
     const node = await this.nodeRepository.findOne({ where: { id: nodeId } });
     if (!node) {
-      throw new NotFoundException(`Node ${nodeId} not found`);
+      throw new NotFoundException('Node not found.');
     }
 
     const ancestors = await this.closureRepository
@@ -33,15 +33,15 @@ export class NodesService {
         'closure.depth AS depth',
       ])
       .orderBy('closure.depth', 'ASC')
-      .getRawMany<NodesProps>();
+      .getRawMany<NodesDto>();
 
     return ancestors;
   }
 
-  async getDescendants(nodeId: string): Promise<NodesProps[]> {
+  async getDescendants(nodeId: string): Promise<NodesDto[]> {
     const node = await this.nodeRepository.findOne({ where: { id: nodeId } });
     if (!node) {
-      throw new NotFoundException(`Node ${nodeId} not found`);
+      throw new NotFoundException('Node not found.');
     }
 
     const descendants = await this.closureRepository
@@ -56,7 +56,7 @@ export class NodesService {
         'closure.depth AS depth',
       ])
       .orderBy('closure.depth', 'ASC')
-      .getRawMany<NodesProps>();
+      .getRawMany<NodesDto>();
 
     return descendants;
   }

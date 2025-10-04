@@ -23,7 +23,7 @@ export class GroupsService {
         where: { id: parentId, type: NodeType.GROUP },
       });
       if (!parent) {
-        throw new NotFoundException(`Parent group ${parentId} not found`);
+        throw new NotFoundException('Parent group not found.');
       }
     }
 

@@ -46,7 +46,7 @@ export class UsersController {
   @ApiResponse({ status: 409, description: 'User already belongs to group.' })
   @ApiResponse({ status: 422, description: 'Cyclic relationship detected.' })
   addUserToGroup(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddUserToGroupDto,
   ) {
     return this.usersService.addUserToGroup(id, dto);
@@ -72,9 +72,7 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Node is not a USER.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  getUserOrganizations(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-  ) {
+  getUserOrganizations(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.getUserOrganizations(id);
   }
 }

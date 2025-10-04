@@ -11,7 +11,7 @@ import { NodeEntity, NodeType } from 'src/entities/node.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
-import { UserOrganizationProps } from 'src/interfaces';
+import { UserOrganizationDto } from './dto/user-organization.dto';
 
 @Injectable()
 export class UsersService {
@@ -108,7 +108,7 @@ export class UsersService {
     await this.closureRepository.save(newLinks);
   }
 
-  async getUserOrganizations(userId: string): Promise<UserOrganizationProps[]> {
+  async getUserOrganizations(userId: string): Promise<UserOrganizationDto[]> {
     const user = await this.nodeRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found.');
@@ -125,7 +125,7 @@ export class UsersService {
       .andWhere('node.type = :type', { type: NodeType.GROUP })
       .select(['node.id AS id', 'node.name AS name', 'closure.depth AS depth'])
       .orderBy('closure.depth', 'ASC')
-      .getRawMany<UserOrganizationProps>();
+      .getRawMany<UserOrganizationDto>();
 
     return ancestors;
   }

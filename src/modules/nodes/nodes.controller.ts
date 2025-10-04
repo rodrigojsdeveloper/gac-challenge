@@ -1,17 +1,36 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { NodesService } from './nodes.service';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { NodesDto } from './dto/node.dto';
 
+@ApiTags('nodes')
 @Controller('nodes')
 export class NodesController {
   constructor(private readonly nodesService: NodesService) {}
 
   @Get(':id/ancestors')
-  getAncestors(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  @ApiOperation({ summary: 'Get node ancestors' })
+  @ApiParam({ name: 'id', description: 'Node ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of ancestor nodes ordered by depth.',
+    type: [NodesDto],
+  })
+  @ApiResponse({ status: 404, description: 'Node not found.' })
+  getAncestors(@Param('id', ParseUUIDPipe) id: string) {
     return this.nodesService.getAncestors(id);
   }
 
   @Get(':id/descendants')
-  getDescendants(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  @ApiOperation({ summary: 'Get node descendants' })
+  @ApiParam({ name: 'id', description: 'Node ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of descendant nodes ordered by depth.',
+    type: [NodesDto],
+  })
+  @ApiResponse({ status: 404, description: 'Node not found.' })
+  getDescendants(@Param('id', ParseUUIDPipe) id: string) {
     return this.nodesService.getDescendants(id);
   }
 }
