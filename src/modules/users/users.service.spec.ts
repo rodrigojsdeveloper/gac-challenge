@@ -8,7 +8,10 @@ import {
 import { NodeType } from 'src/entities/node.entity';
 import { RepositoriesService } from 'src/repositories';
 import { UsersService } from './users.service';
-import { mockRepositoriesService } from 'test/mocks/repositories.mock';
+import {
+  createMockQueryBuilder,
+  mockRepositoriesService,
+} from 'test/mocks/repositories.mock';
 import { UserOrganizationDto } from './dto/user-organization.dto';
 
 type ClosureProps = {
@@ -32,15 +35,6 @@ describe('UsersService', () => {
     name: 'Engineering',
     type: NodeType.GROUP,
   };
-
-  const createMockQueryBuilder = (results: UserOrganizationDto[] = []) => ({
-    innerJoin: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    getRawMany: jest.fn().mockResolvedValue(results),
-  });
 
   const mockUserAndGroupFound = () => {
     mockRepositoriesService.nodeRepository.findOne

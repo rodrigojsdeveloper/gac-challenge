@@ -1,3 +1,5 @@
+import { UserOrganizationDto } from 'src/modules/users/dto/user-organization.dto';
+
 export const mockRepositoriesService = {
   nodeRepository: {
     findOne: jest.fn(),
@@ -13,3 +15,14 @@ export const mockRepositoriesService = {
     createQueryBuilder: jest.fn(),
   },
 };
+
+export const createMockQueryBuilder = (
+  results: UserOrganizationDto[] = [],
+) => ({
+  innerJoin: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  andWhere: jest.fn().mockReturnThis(),
+  select: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
+  getRawMany: jest.fn().mockResolvedValue(results),
+});
