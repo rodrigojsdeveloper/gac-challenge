@@ -6,17 +6,19 @@ import { NodesService } from './nodes.service';
 import {
   createMockQueryBuilder,
   mockRepositoriesService,
+  UUIDS,
 } from 'test/mocks/repositories.mock';
 
 describe('NodesService', () => {
   let service: NodesService;
 
-  const UUIDS = {
-    node: '11111111-1111-1111-1111-111111111111',
-    a1: '22222222-2222-2222-2222-222222222222',
-    a2: '33333333-3333-3333-3333-333333333333',
-    a3: '44444444-4444-4444-4444-444444444444',
-  };
+  const createMockNode = (id: string, name: string, type = NodeType.GROUP) => ({
+    id,
+    name,
+    type,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,50 +32,52 @@ describe('NodesService', () => {
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('getAncestors', () => {
-    it('should throw NotFoundException if node not found', async () => {
+    it('should throw NotFoundException when node does not exist', async () => {
       mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getAncestors(UUIDS.node)).rejects.toThrow(
+      await expect(service.getAncestors(UUIDS.userId)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it('should return empty array if node has no ancestors', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue({
-        id: UUIDS.node,
-        name: 'Root Node',
-        type: NodeType.GROUP,
-      });
+    it('should return empty array when node has no ancestors', async () => {
+      const node = createMockNode(UUIDS.userId, 'Root Node');
+      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(node);
 
       const mockQueryBuilder = createMockQueryBuilder([]);
       mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
         mockQueryBuilder,
       );
 
-      const result = await service.getAncestors(UUIDS.node);
+      const result = await service.getAncestors(UUIDS.userId);
 
       expect(result).toEqual([]);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'closure.descendant_id = :nodeId',
-        { nodeId: UUIDS.node },
+        { nodeId: UUIDS.userId },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'closure.depth >= 1',
       );
     });
 
-    it('should return ancestors ordered by depth', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue({
-        id: UUIDS.node,
-        name: 'Child Node',
-        type: NodeType.USER,
-      });
+    it('should return ancestors ordered by depth ascending', async () => {
+      const node = createMockNode(UUIDS.userId, 'Child Node', NodeType.USER);
+      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(node);
 
       const ancestors = [
-        { id: UUIDS.a1, name: 'Parent', type: NodeType.GROUP, depth: 1 },
-        { id: UUIDS.a2, name: 'Grandparent', type: NodeType.GROUP, depth: 2 },
-        { id: UUIDS.a3, name: 'Root', type: NodeType.GROUP, depth: 3 },
+        { id: UUIDS.groupId, name: 'Parent', type: NodeType.GROUP, depth: 1 },
+        {
+          id: UUIDS.parentId,
+          name: 'Grandparent',
+          type: NodeType.GROUP,
+          depth: 2,
+        },
+        { id: UUIDS.rootId, name: 'Root', type: NodeType.GROUP, depth: 3 },
       ];
 
       const mockQueryBuilder = createMockQueryBuilder(ancestors);
@@ -81,51 +85,83 @@ describe('NodesService', () => {
         mockQueryBuilder,
       );
 
-      const result = await service.getAncestors(UUIDS.node);
-      expect(result).toEqual(ancestors);
-    });
-  });
+      const result = await service.getAncestors(UUIDS.userId);
 
-  describe('getDescendants', () => {
-    it('should throw NotFoundException if node not found', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(null);
-      await expect(service.getDescendants(UUIDS.node)).rejects.toThrow(
-        NotFoundException,
+      expect(result).toEqual(ancestors);
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'closure.depth',
+        'ASC',
       );
     });
 
-    it('should return empty array if node has no descendants', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue({
-        id: UUIDS.node,
-        name: 'Leaf Node',
-        type: NodeType.USER,
-      });
+    it('should correctly build query with innerJoin and select', async () => {
+      const node = createMockNode(UUIDS.userId, 'Node');
+      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(node);
 
       const mockQueryBuilder = createMockQueryBuilder([]);
       mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
         mockQueryBuilder,
       );
 
-      const result = await service.getDescendants(UUIDS.node);
+      await service.getAncestors(UUIDS.userId);
+
+      expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
+        expect.anything(),
+        'node',
+        'node.id = closure.ancestor_id',
+      );
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith([
+        'node.id AS id',
+        'node.name AS name',
+        'node.type AS type',
+        'closure.depth AS depth',
+      ]);
+    });
+  });
+
+  describe('getDescendants', () => {
+    it('should throw NotFoundException when node does not exist', async () => {
+      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getDescendants(UUIDS.userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should return empty array when node has no descendants', async () => {
+      const node = createMockNode(UUIDS.userId, 'Leaf Node', NodeType.USER);
+      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(node);
+
+      const mockQueryBuilder = createMockQueryBuilder([]);
+      mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
+
+      const result = await service.getDescendants(UUIDS.userId);
 
       expect(result).toEqual([]);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'closure.ancestor_id = :nodeId',
-        { nodeId: UUIDS.node },
+        { nodeId: UUIDS.userId },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'closure.depth >= 1',
       );
     });
 
-    it('should return descendants ordered by depth', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue({
-        id: UUIDS.node,
-        name: 'Root',
-        type: NodeType.GROUP,
-      });
+    it('should return descendants ordered by depth ascending', async () => {
+      const node = createMockNode(UUIDS.userId, 'Root');
+      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(node);
 
       const descendants = [
-        { id: UUIDS.a1, name: 'Child', type: NodeType.GROUP, depth: 1 },
-        { id: UUIDS.a2, name: 'Grandchild', type: NodeType.GROUP, depth: 2 },
-        { id: UUIDS.a3, name: 'User', type: NodeType.USER, depth: 3 },
+        { id: UUIDS.groupId, name: 'Child', type: NodeType.GROUP, depth: 1 },
+        {
+          id: UUIDS.parentId,
+          name: 'Grandchild',
+          type: NodeType.GROUP,
+          depth: 2,
+        },
+        { id: UUIDS.rootId, name: 'User', type: NodeType.USER, depth: 3 },
       ];
 
       const mockQueryBuilder = createMockQueryBuilder(descendants);
@@ -133,8 +169,37 @@ describe('NodesService', () => {
         mockQueryBuilder,
       );
 
-      const result = await service.getDescendants(UUIDS.node);
+      const result = await service.getDescendants(UUIDS.userId);
+
       expect(result).toEqual(descendants);
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'closure.depth',
+        'ASC',
+      );
+    });
+
+    it('should correctly build query with innerJoin and select', async () => {
+      const node = createMockNode(UUIDS.userId, 'Node');
+      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(node);
+
+      const mockQueryBuilder = createMockQueryBuilder([]);
+      mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
+
+      await service.getDescendants(UUIDS.userId);
+
+      expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
+        expect.anything(),
+        'node',
+        'node.id = closure.descendant_id',
+      );
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith([
+        'node.id AS id',
+        'node.name AS name',
+        'node.type AS type',
+        'closure.depth AS depth',
+      ]);
     });
   });
 });

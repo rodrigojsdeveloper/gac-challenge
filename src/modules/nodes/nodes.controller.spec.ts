@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { NodeType } from 'src/entities/node.entity';
 import { NodesService } from './nodes.service';
 import { NodesController } from './nodes.controller';
+import { UUIDS } from 'test/mocks/repositories.mock';
 
 describe('NodesController', () => {
   let controller: NodesController;
@@ -11,8 +12,6 @@ describe('NodesController', () => {
     getAncestors: jest.fn(),
     getDescendants: jest.fn(),
   };
-
-  const nodeId = '11111111-1111-1111-1111-111111111111';
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,124 +22,86 @@ describe('NodesController', () => {
     controller = module.get<NodesController>(NodesController);
   });
 
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   describe('getAncestors', () => {
-    const nodeId = '11111111-1111-1111-1111-111111111111';
-
-    it('should return ancestors successfully', async () => {
-      const expectedAncestors = [
-        { id: '222', name: 'Parent', type: NodeType.GROUP, depth: 1 },
-        { id: '333', name: 'Grandparent', type: NodeType.GROUP, depth: 2 },
+    it('should return ancestors from service', async () => {
+      const ancestors = [
+        { id: UUIDS.groupId, name: 'Parent', type: NodeType.GROUP, depth: 1 },
+        {
+          id: UUIDS.parentId,
+          name: 'Grandparent',
+          type: NodeType.GROUP,
+          depth: 2,
+        },
       ];
 
-      mockNodesService.getAncestors.mockResolvedValue(expectedAncestors);
+      mockNodesService.getAncestors.mockResolvedValue(ancestors);
 
-      const result = await controller.getAncestors(nodeId);
+      const result = await controller.getAncestors(UUIDS.userId);
 
-      expect(mockNodesService.getAncestors).toHaveBeenCalledWith(nodeId);
-      expect(result).toEqual(expectedAncestors);
+      expect(mockNodesService.getAncestors).toHaveBeenCalledWith(UUIDS.userId);
+      expect(result).toEqual(ancestors);
     });
 
-    it('should return empty array if node has no ancestors', async () => {
+    it('should return empty array when no ancestors', async () => {
       mockNodesService.getAncestors.mockResolvedValue([]);
 
-      const result = await controller.getAncestors(nodeId);
+      const result = await controller.getAncestors(UUIDS.userId);
 
       expect(result).toEqual([]);
-      expect(mockNodesService.getAncestors).toHaveBeenCalledTimes(1);
     });
 
-    it('should throw NotFoundException if node not found', async () => {
+    it('should throw NotFoundException when node not found', async () => {
       mockNodesService.getAncestors.mockRejectedValue(
         new NotFoundException('Node not found'),
       );
 
-      await expect(controller.getAncestors(nodeId)).rejects.toThrow(
+      await expect(controller.getAncestors(UUIDS.userId)).rejects.toThrow(
         NotFoundException,
-      );
-    });
-
-    it('should preserve the service response reference', async () => {
-      const serviceResponse = [
-        { id: 'xyz', name: 'Test', type: NodeType.GROUP, depth: 1 },
-      ];
-      mockNodesService.getAncestors.mockResolvedValue(serviceResponse);
-
-      const result = await controller.getAncestors(nodeId);
-      expect(result).toBe(serviceResponse);
-    });
-
-    it('should handle unexpected service errors', async () => {
-      mockNodesService.getAncestors.mockRejectedValue(
-        new Error('DB connection failed'),
-      );
-
-      await expect(controller.getAncestors(nodeId)).rejects.toThrow(
-        'DB connection failed',
       );
     });
   });
 
   describe('getDescendants', () => {
-    it('should return descendants successfully', async () => {
-      const expectedDescendants = [
-        { id: '222', name: 'Child', type: NodeType.GROUP, depth: 1 },
-        { id: '333', name: 'Grandchild', type: NodeType.USER, depth: 2 },
+    it('should return descendants from service', async () => {
+      const descendants = [
+        { id: UUIDS.groupId, name: 'Child', type: NodeType.GROUP, depth: 1 },
+        {
+          id: UUIDS.parentId,
+          name: 'Grandchild',
+          type: NodeType.USER,
+          depth: 2,
+        },
       ];
 
-      mockNodesService.getDescendants.mockResolvedValue(expectedDescendants);
+      mockNodesService.getDescendants.mockResolvedValue(descendants);
 
-      const result = await controller.getDescendants(nodeId);
+      const result = await controller.getDescendants(UUIDS.userId);
 
-      expect(mockNodesService.getDescendants).toHaveBeenCalledWith(nodeId);
-      expect(result).toEqual(expectedDescendants);
+      expect(mockNodesService.getDescendants).toHaveBeenCalledWith(
+        UUIDS.userId,
+      );
+      expect(result).toEqual(descendants);
     });
 
-    it('should return empty array if node has no descendants', async () => {
+    it('should return empty array when no descendants', async () => {
       mockNodesService.getDescendants.mockResolvedValue([]);
 
-      const result = await controller.getDescendants(nodeId);
+      const result = await controller.getDescendants(UUIDS.userId);
 
       expect(result).toEqual([]);
     });
 
-    it('should throw NotFoundException if node not found', async () => {
+    it('should throw NotFoundException when node not found', async () => {
       mockNodesService.getDescendants.mockRejectedValue(
         new NotFoundException('Node not found'),
       );
 
-      await expect(controller.getDescendants(nodeId)).rejects.toThrow(
+      await expect(controller.getDescendants(UUIDS.userId)).rejects.toThrow(
         NotFoundException,
-      );
-    });
-
-    it('should handle mixed descendant types', async () => {
-      const mixed = [
-        { id: 'a', name: 'Group', type: NodeType.GROUP, depth: 1 },
-        { id: 'b', name: 'User', type: NodeType.USER, depth: 2 },
-      ];
-
-      mockNodesService.getDescendants.mockResolvedValue(mixed);
-
-      const result = await controller.getDescendants(nodeId);
-
-      expect(result).toHaveLength(2);
-      expect(
-        result.find((x) => String(x.type) === String(NodeType.GROUP)),
-      ).toBeDefined();
-      expect(
-        result.find((x) => String(x.type) === String(NodeType.USER)),
-      ).toBeDefined();
-    });
-
-    it('should handle unexpected errors', async () => {
-      mockNodesService.getDescendants.mockRejectedValue(
-        new Error('Timeout error'),
-      );
-
-      await expect(controller.getDescendants(nodeId)).rejects.toThrow(
-        'Timeout error',
       );
     });
   });

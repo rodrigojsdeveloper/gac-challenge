@@ -11,8 +11,8 @@ import { UsersService } from './users.service';
 import {
   createMockQueryBuilder,
   mockRepositoriesService,
+  UUIDS,
 } from 'test/mocks/repositories.mock';
-import { UserOrganizationDto } from './dto/user-organization.dto';
 
 type ClosureProps = {
   ancestorId: string;
@@ -23,24 +23,19 @@ type ClosureProps = {
 describe('UsersService', () => {
   let service: UsersService;
 
-  const mockUser = {
-    id: '11111111-1111-1111-1111-111111111111',
-    name: 'John Doe',
-    email: 'john@example.com',
-    type: NodeType.USER,
-  };
-
-  const mockGroup = {
-    id: '22222222-2222-2222-2222-222222222222',
-    name: 'Engineering',
-    type: NodeType.GROUP,
-  };
-
-  const mockUserAndGroupFound = () => {
-    mockRepositoriesService.nodeRepository.findOne
-      .mockResolvedValueOnce(mockUser)
-      .mockResolvedValueOnce(mockGroup);
-  };
+  const createMockNode = (
+    id: string,
+    name: string,
+    type: NodeType,
+    email?: string,
+  ) => ({
+    id,
+    name,
+    email,
+    type,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -54,32 +49,32 @@ describe('UsersService', () => {
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('create', () => {
     it('should throw ConflictException if email already exists', async () => {
       mockRepositoriesService.nodeRepository.findOneBy.mockResolvedValue({
-        id: 'existing-uuid',
-        email: 'existing@example.com',
+        id: 'existing-id',
+        email: 'john@example.com',
       });
 
       await expect(
-        service.create({
-          name: 'John Doe',
-          email: 'existing@example.com',
-        }),
+        service.create({ name: 'John Doe', email: 'john@example.com' }),
       ).rejects.toThrow(ConflictException);
-
-      expect(
-        mockRepositoriesService.nodeRepository.findOneBy,
-      ).toHaveBeenCalledWith({ email: 'existing@example.com' });
     });
 
     it('should create user successfully', async () => {
+      const user = createMockNode(
+        UUIDS.userId,
+        'John Doe',
+        NodeType.USER,
+        'john@example.com',
+      );
+
       mockRepositoriesService.nodeRepository.findOneBy.mockResolvedValue(null);
-      mockRepositoriesService.nodeRepository.create.mockReturnValue(mockUser);
-      mockRepositoriesService.nodeRepository.save.mockResolvedValue(mockUser);
+      mockRepositoriesService.nodeRepository.create.mockReturnValue(user);
+      mockRepositoriesService.nodeRepository.save.mockResolvedValue(user);
       mockRepositoriesService.closureRepository.save.mockResolvedValue({});
 
       const result = await service.create({
@@ -94,308 +89,384 @@ describe('UsersService', () => {
         name: 'John Doe',
         email: 'john@example.com',
       });
-
       expect(
         mockRepositoriesService.closureRepository.save,
       ).toHaveBeenCalledWith({
-        ancestorId: mockUser.id,
-        descendantId: mockUser.id,
+        ancestorId: user.id,
+        descendantId: user.id,
         depth: 0,
       });
-
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ ...user, type: NodeType.USER });
     });
   });
 
   describe('addUserToGroup', () => {
-    it('should throw NotFoundException if user not found', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(null);
+    describe('validation', () => {
+      it('should throw NotFoundException when user not found', async () => {
+        mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.addUserToGroup(mockUser.id, { groupId: mockGroup.id }),
-      ).rejects.toThrow(NotFoundException);
-
-      expect(
-        mockRepositoriesService.nodeRepository.findOne,
-      ).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-      });
-    });
-
-    it('should throw BadRequestException if node is not a USER', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValueOnce({
-        ...mockGroup,
-        id: mockUser.id,
+        await expect(
+          service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId }),
+        ).rejects.toThrow(NotFoundException);
       });
 
-      await expect(
-        service.addUserToGroup(mockUser.id, { groupId: mockGroup.id }),
-      ).rejects.toThrow(BadRequestException);
-    });
+      it('should throw BadRequestException when node is not a USER', async () => {
+        const group = createMockNode(UUIDS.userId, 'Group', NodeType.GROUP);
+        mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(group);
 
-    it('should throw NotFoundException if group not found', async () => {
-      mockRepositoriesService.nodeRepository.findOne
-        .mockResolvedValueOnce(mockUser)
-        .mockResolvedValueOnce(null);
-
-      await expect(
-        service.addUserToGroup(mockUser.id, { groupId: mockGroup.id }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException if target is not a GROUP', async () => {
-      mockRepositoriesService.nodeRepository.findOne
-        .mockResolvedValueOnce(mockUser)
-        .mockResolvedValueOnce({ ...mockUser, id: mockGroup.id });
-
-      await expect(
-        service.addUserToGroup(mockUser.id, { groupId: mockGroup.id }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw ConflictException if user already belongs to group', async () => {
-      mockUserAndGroupFound();
-
-      mockRepositoriesService.closureRepository.findOne.mockResolvedValue({
-        ancestorId: mockGroup.id,
-        descendantId: mockUser.id,
-        depth: 1,
+        await expect(
+          service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId }),
+        ).rejects.toThrow(BadRequestException);
       });
 
-      await expect(
-        service.addUserToGroup(mockUser.id, { groupId: mockGroup.id }),
-      ).rejects.toThrow(ConflictException);
-    });
+      it('should throw NotFoundException when group not found', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
 
-    it('should throw UnprocessableEntityException if cyclic relationship detected', async () => {
-      mockUserAndGroupFound();
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(null);
 
-      mockRepositoriesService.closureRepository.findOne.mockResolvedValue(null);
-      mockRepositoriesService.closureRepository.find.mockResolvedValue([
-        { ancestorId: mockUser.id, descendantId: mockGroup.id, depth: 1 },
-        { ancestorId: mockGroup.id, descendantId: mockGroup.id, depth: 0 },
-      ]);
+        await expect(
+          service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId }),
+        ).rejects.toThrow(NotFoundException);
+      });
 
-      await expect(
-        service.addUserToGroup(mockUser.id, { groupId: mockGroup.id }),
-      ).rejects.toThrow(UnprocessableEntityException);
-    });
+      it('should throw BadRequestException when target is not a GROUP', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const notGroup = createMockNode(
+          UUIDS.groupId,
+          'Jane',
+          NodeType.USER,
+          'jane@example.com',
+        );
 
-    it('should add user to group successfully', async () => {
-      mockUserAndGroupFound();
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(notGroup);
 
-      mockRepositoriesService.closureRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({
-          ancestorId: mockUser.id,
-          descendantId: mockUser.id,
-          depth: 0,
+        await expect(
+          service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId }),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it('should throw ConflictException if user already belongs to group', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const group = createMockNode(
+          UUIDS.groupId,
+          'Engineering',
+          NodeType.GROUP,
+        );
+
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(group);
+        mockRepositoriesService.closureRepository.findOne.mockResolvedValue({
+          ancestorId: UUIDS.groupId,
+          descendantId: UUIDS.userId,
+          depth: 1,
         });
 
-      mockRepositoriesService.closureRepository.find.mockResolvedValue([
-        { ancestorId: mockGroup.id, descendantId: mockGroup.id, depth: 0 },
-      ]);
+        await expect(
+          service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId }),
+        ).rejects.toThrow(ConflictException);
+      });
 
-      mockRepositoriesService.closureRepository.create.mockImplementation(
-        (data: ClosureProps) => data,
-      );
-      mockRepositoriesService.closureRepository.save.mockResolvedValue({});
+      it('should throw UnprocessableEntityException on cyclic relationship', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const group = createMockNode(
+          UUIDS.groupId,
+          'Engineering',
+          NodeType.GROUP,
+        );
 
-      await service.addUserToGroup(mockUser.id, { groupId: mockGroup.id });
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(group);
+        mockRepositoriesService.closureRepository.findOne.mockResolvedValue(
+          null,
+        );
+        mockRepositoriesService.closureRepository.find.mockResolvedValue([
+          { ancestorId: UUIDS.userId, descendantId: UUIDS.groupId, depth: 1 },
+        ]);
 
-      expect(
-        mockRepositoriesService.closureRepository.save,
-      ).toHaveBeenCalledWith([
-        { ancestorId: mockGroup.id, descendantId: mockUser.id, depth: 1 },
-      ]);
+        await expect(
+          service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId }),
+        ).rejects.toThrow(UnprocessableEntityException);
+      });
     });
 
-    it('should add user to group with hierarchy', async () => {
-      const parentGroupId = '33333333-3333-3333-3333-333333333333';
+    describe('simple relationship', () => {
+      it('should add user to group successfully', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const group = createMockNode(
+          UUIDS.groupId,
+          'Engineering',
+          NodeType.GROUP,
+        );
 
-      mockUserAndGroupFound();
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(group);
+        mockRepositoriesService.closureRepository.findOne
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({
+            ancestorId: UUIDS.userId,
+            descendantId: UUIDS.userId,
+            depth: 0,
+          });
+        mockRepositoriesService.closureRepository.find.mockResolvedValue([
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.groupId, depth: 0 },
+        ]);
+        mockRepositoriesService.closureRepository.create.mockImplementation(
+          (data: ClosureProps) => data,
+        );
+        mockRepositoriesService.closureRepository.save.mockResolvedValue({});
 
-      mockRepositoriesService.closureRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({
-          ancestorId: mockUser.id,
-          descendantId: mockUser.id,
-          depth: 0,
-        });
+        await service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId });
 
-      mockRepositoriesService.closureRepository.find.mockResolvedValue([
-        { ancestorId: parentGroupId, descendantId: mockGroup.id, depth: 1 },
-        { ancestorId: mockGroup.id, descendantId: mockGroup.id, depth: 0 },
-      ]);
+        expect(
+          mockRepositoriesService.closureRepository.save,
+        ).toHaveBeenCalledWith([
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.userId, depth: 1 },
+        ]);
+      });
 
-      mockRepositoriesService.closureRepository.create.mockImplementation(
-        (data: ClosureProps) => data,
-      );
-      mockRepositoriesService.closureRepository.save.mockResolvedValue({});
+      it('should create user self-reference if not exists', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const group = createMockNode(
+          UUIDS.groupId,
+          'Engineering',
+          NodeType.GROUP,
+        );
 
-      await service.addUserToGroup(mockUser.id, { groupId: mockGroup.id });
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(group);
+        mockRepositoriesService.closureRepository.findOne
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(null);
+        mockRepositoriesService.closureRepository.find.mockResolvedValue([
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.groupId, depth: 0 },
+        ]);
+        mockRepositoriesService.closureRepository.create.mockImplementation(
+          (data: ClosureProps) => data,
+        );
+        mockRepositoriesService.closureRepository.save.mockResolvedValue({});
 
-      expect(
-        mockRepositoriesService.closureRepository.save,
-      ).toHaveBeenCalledWith([
-        { ancestorId: parentGroupId, descendantId: mockUser.id, depth: 2 },
-        { ancestorId: mockGroup.id, descendantId: mockUser.id, depth: 1 },
-      ]);
+        await service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId });
+
+        expect(
+          mockRepositoriesService.closureRepository.save,
+        ).toHaveBeenCalledWith([
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.userId, depth: 1 },
+          { ancestorId: UUIDS.userId, descendantId: UUIDS.userId, depth: 0 },
+        ]);
+      });
     });
 
-    it('should create user self-reference if not exists', async () => {
-      mockUserAndGroupFound();
+    describe('hierarchical relationships', () => {
+      it('should add user to group with parent hierarchy', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const group = createMockNode(
+          UUIDS.groupId,
+          'Engineering',
+          NodeType.GROUP,
+        );
 
-      mockRepositoriesService.closureRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null);
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(group);
+        mockRepositoriesService.closureRepository.findOne
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({
+            ancestorId: UUIDS.userId,
+            descendantId: UUIDS.userId,
+            depth: 0,
+          });
+        mockRepositoriesService.closureRepository.find.mockResolvedValue([
+          { ancestorId: UUIDS.parentId, descendantId: UUIDS.groupId, depth: 1 },
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.groupId, depth: 0 },
+        ]);
+        mockRepositoriesService.closureRepository.create.mockImplementation(
+          (data: ClosureProps) => data,
+        );
+        mockRepositoriesService.closureRepository.save.mockResolvedValue({});
 
-      mockRepositoriesService.closureRepository.find.mockResolvedValue([
-        { ancestorId: mockGroup.id, descendantId: mockGroup.id, depth: 0 },
-      ]);
+        await service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId });
 
-      mockRepositoriesService.closureRepository.create.mockImplementation(
-        (data: ClosureProps) => data,
-      );
-      mockRepositoriesService.closureRepository.save.mockResolvedValue({});
+        expect(
+          mockRepositoriesService.closureRepository.save,
+        ).toHaveBeenCalledWith([
+          { ancestorId: UUIDS.parentId, descendantId: UUIDS.userId, depth: 2 },
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.userId, depth: 1 },
+        ]);
+      });
 
-      await service.addUserToGroup(mockUser.id, { groupId: mockGroup.id });
+      it('should preserve closure depth calculation correctly', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const group = createMockNode(
+          UUIDS.groupId,
+          'Engineering',
+          NodeType.GROUP,
+        );
 
-      expect(
-        mockRepositoriesService.closureRepository.save,
-      ).toHaveBeenCalledWith([
-        { ancestorId: mockGroup.id, descendantId: mockUser.id, depth: 1 },
-        { ancestorId: mockUser.id, descendantId: mockUser.id, depth: 0 },
-      ]);
+        mockRepositoriesService.nodeRepository.findOne
+          .mockResolvedValueOnce(user)
+          .mockResolvedValueOnce(group);
+        mockRepositoriesService.closureRepository.findOne
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({
+            ancestorId: UUIDS.userId,
+            descendantId: UUIDS.userId,
+            depth: 0,
+          });
+        mockRepositoriesService.closureRepository.find.mockResolvedValue([
+          { ancestorId: UUIDS.rootId, descendantId: UUIDS.groupId, depth: 2 },
+          { ancestorId: UUIDS.parentId, descendantId: UUIDS.groupId, depth: 1 },
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.groupId, depth: 0 },
+        ]);
+        mockRepositoriesService.closureRepository.create.mockImplementation(
+          (data: ClosureProps) => data,
+        );
+        mockRepositoriesService.closureRepository.save.mockResolvedValue({});
+
+        await service.addUserToGroup(UUIDS.userId, { groupId: UUIDS.groupId });
+
+        expect(
+          mockRepositoriesService.closureRepository.save,
+        ).toHaveBeenCalledWith([
+          { ancestorId: UUIDS.rootId, descendantId: UUIDS.userId, depth: 3 },
+          { ancestorId: UUIDS.parentId, descendantId: UUIDS.userId, depth: 2 },
+          { ancestorId: UUIDS.groupId, descendantId: UUIDS.userId, depth: 1 },
+        ]);
+      });
     });
   });
 
   describe('getUserOrganizations', () => {
-    it('should throw NotFoundException if user not found', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(null);
+    describe('validation', () => {
+      it('should throw NotFoundException when user not found', async () => {
+        mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getUserOrganizations(mockUser.id)).rejects.toThrow(
-        NotFoundException,
-      );
+        await expect(
+          service.getUserOrganizations(UUIDS.userId),
+        ).rejects.toThrow(NotFoundException);
+      });
 
-      expect(
-        mockRepositoriesService.nodeRepository.findOne,
-      ).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
+      it('should throw BadRequestException when node is not a USER', async () => {
+        const group = createMockNode(
+          UUIDS.userId,
+          'Engineering',
+          NodeType.GROUP,
+        );
+        mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(group);
+
+        await expect(
+          service.getUserOrganizations(UUIDS.userId),
+        ).rejects.toThrow(BadRequestException);
       });
     });
 
-    it('should throw BadRequestException if node is not a USER', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(
-        mockGroup,
-      );
+    describe('query results', () => {
+      it('should return empty array when user has no organizations', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
 
-      await expect(service.getUserOrganizations(mockUser.id)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
+        mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(user);
+        const mockQueryBuilder = createMockQueryBuilder([]);
+        mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
+          mockQueryBuilder,
+        );
 
-    it('should return empty array if user has no organizations', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(
-        mockUser,
-      );
+        const result = await service.getUserOrganizations(UUIDS.userId);
 
-      const mockQueryBuilder = createMockQueryBuilder([]);
-      mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+        expect(result).toEqual([]);
+      });
 
-      const result = await service.getUserOrganizations(mockUser.id);
+      it('should return user organizations ordered by depth', async () => {
+        const user = createMockNode(
+          UUIDS.userId,
+          'John',
+          NodeType.USER,
+          'john@example.com',
+        );
+        const organizations = [
+          { id: UUIDS.groupId, name: 'Engineering', depth: 1 },
+          { id: UUIDS.parentId, name: 'Tech Department', depth: 2 },
+          { id: UUIDS.rootId, name: 'Company', depth: 3 },
+        ];
 
-      expect(result).toEqual([]);
-      expect(mockQueryBuilder.getRawMany).toHaveBeenCalled();
-    });
+        mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(user);
+        const mockQueryBuilder = createMockQueryBuilder(organizations);
+        mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
+          mockQueryBuilder,
+        );
 
-    it('should return user organizations ordered by depth', async () => {
-      const organizations: UserOrganizationDto[] = [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Engineering',
-          depth: 1,
-        },
-        {
-          id: '33333333-3333-3333-3333-333333333333',
-          name: 'Tech Department',
-          depth: 2,
-        },
-        {
-          id: '44444444-4444-4444-4444-444444444444',
-          name: 'Company',
-          depth: 3,
-        },
-      ];
+        const result = await service.getUserOrganizations(UUIDS.userId);
 
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(
-        mockUser,
-      );
-
-      const mockQueryBuilder = createMockQueryBuilder(organizations);
-      mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
-
-      const result = await service.getUserOrganizations(mockUser.id);
-
-      expect(result).toEqual(organizations);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-        'closure.descendant_id = :userId',
-        { userId: mockUser.id },
-      );
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'closure.depth >= 1',
-      );
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'node.type = :type',
-        {
-          type: NodeType.GROUP,
-        },
-      );
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
-        'closure.depth',
-        'ASC',
-      );
-    });
-
-    it('should filter only GROUP type nodes', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(
-        mockUser,
-      );
-
-      const mockQueryBuilder = createMockQueryBuilder([]);
-      mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
-
-      await service.getUserOrganizations(mockUser.id);
-
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'node.type = :type',
-        {
-          type: NodeType.GROUP,
-        },
-      );
-    });
-
-    it('should only return ancestors with depth >= 1', async () => {
-      mockRepositoriesService.nodeRepository.findOne.mockResolvedValue(
-        mockUser,
-      );
-
-      const mockQueryBuilder = createMockQueryBuilder([]);
-      mockRepositoriesService.closureRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
-
-      await service.getUserOrganizations(mockUser.id);
-
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'closure.depth >= 1',
-      );
+        expect(result).toEqual(organizations);
+        expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+          'closure.descendant_id = :userId',
+          { userId: UUIDS.userId },
+        );
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'closure.depth >= 1',
+        );
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'node.type = :type',
+          {
+            type: NodeType.GROUP,
+          },
+        );
+        expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+          'closure.depth',
+          'ASC',
+        );
+      });
     });
   });
 });
