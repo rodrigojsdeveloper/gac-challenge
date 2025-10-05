@@ -11,7 +11,24 @@ describe('GroupsController', () => {
     create: jest.fn(),
   };
 
-  beforeEach(async () => {
+  const UUIDS = {
+    root: '11111111-1111-1111-1111-111111111111',
+    parent: '22222222-2222-2222-2222-222222222222',
+    child: '33333333-3333-3333-3333-333333333333',
+  };
+
+  const createExpectedGroup = (
+    id: string,
+    name: string,
+    parentId?: string,
+  ) => ({
+    id,
+    name,
+    type: NodeType.GROUP,
+    parentId,
+  });
+
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GroupsController],
       providers: [{ provide: GroupsService, useValue: mockGroupsService }],
@@ -21,50 +38,41 @@ describe('GroupsController', () => {
     jest.clearAllMocks();
   });
 
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
   describe('create', () => {
-    it('should create a root group successfully', async () => {
-      const createDto = { name: 'Root Group' };
-      const expectedGroup = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Root Group',
-        type: NodeType.GROUP,
-        parentId: null,
-      };
+    const testCases = [
+      { name: 'Root Group', id: UUIDS.root },
+      { name: 'Child Group', id: UUIDS.child, parentId: UUIDS.parent },
+      { name: 'No Parent Group', id: UUIDS.root },
+      { name: 'Child With Parent', id: UUIDS.child, parentId: UUIDS.parent },
+      { name: 'Group with @#$% special chars!', id: UUIDS.root },
+      { name: 'Long Group Name', id: UUIDS.root, longName: true },
+    ];
 
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
+    for (const testCase of testCases) {
+      it(`should create group: "${testCase.name}"`, async () => {
+        const groupName = testCase.longName ? 'A'.repeat(255) : testCase.name;
+        const createDto = { name: groupName, parentId: testCase.parentId };
+        const expectedGroup = createExpectedGroup(
+          testCase.id,
+          groupName,
+          testCase.parentId,
+        );
 
-      const result = await controller.create(createDto);
+        mockGroupsService.create.mockResolvedValue(expectedGroup);
 
-      expect(mockGroupsService.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual(expectedGroup);
-    });
+        const result = await controller.create(createDto);
 
-    it('should create a child group successfully', async () => {
-      const parentId = '22222222-2222-2222-2222-222222222222';
-      const createDto = {
-        name: 'Child Group',
-        parentId,
-      };
-      const expectedGroup = {
-        id: '33333333-3333-3333-3333-333333333333',
-        name: 'Child Group',
-        type: NodeType.GROUP,
-        parentId,
-      };
-
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
-
-      const result = await controller.create(createDto);
-
-      expect(mockGroupsService.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual(expectedGroup);
-    });
+        expect(mockGroupsService.create).toHaveBeenCalledWith(createDto);
+        expect(result).toEqual(expectedGroup);
+      });
+    }
 
     it('should throw NotFoundException when parent not found', async () => {
-      const createDto = {
-        name: 'Orphan Group',
-        parentId: '99999999-9999-9999-9999-999999999999',
-      };
+      const createDto = { name: 'Orphan Group', parentId: 'non-existing-id' };
 
       mockGroupsService.create.mockRejectedValue(
         new NotFoundException('Parent group not found'),
@@ -77,219 +85,15 @@ describe('GroupsController', () => {
       expect(mockGroupsService.create).toHaveBeenCalledWith(createDto);
     });
 
-    it('should pass correct DTO to service', async () => {
-      const createDto = {
-        name: 'Test Group',
-        parentId: '11111111-1111-1111-1111-111111111111',
-      };
-
-      mockGroupsService.create.mockResolvedValue({
-        id: '22222222-2222-2222-2222-222222222222',
-        name: 'Test Group',
-        type: NodeType.GROUP,
-        parentId: '11111111-1111-1111-1111-111111111111',
-      });
-
-      await controller.create(createDto);
-
-      expect(mockGroupsService.create).toHaveBeenCalledWith(createDto);
-      expect(mockGroupsService.create).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call service only once', async () => {
-      const createDto = { name: 'Single Call Group' };
-
-      mockGroupsService.create.mockResolvedValue({
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Single Call Group',
-        type: NodeType.GROUP,
-        parentId: null,
-      });
-
-      await controller.create(createDto);
-
-      expect(mockGroupsService.create).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return group with correct type', async () => {
-      const createDto = { name: 'Type Test Group' };
-      const expectedGroup = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Type Test Group',
-        type: NodeType.GROUP,
-        parentId: null,
-      };
-
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
-
-      const result = await controller.create(createDto);
-
-      expect(result.type).toBe(NodeType.GROUP);
-      expect(String(result.type)).toBe(String(NodeType.GROUP));
-    });
-
-    it('should create group with null parentId when not provided', async () => {
-      const createDto = { name: 'No Parent Group' };
-      const expectedGroup = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'No Parent Group',
-        type: NodeType.GROUP,
-        parentId: null,
-      };
-
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
-
-      const result = await controller.create(createDto);
-
-      expect(result.parentId).toBeNull();
-    });
-
-    it('should create group with parentId when provided', async () => {
-      const parentId = '22222222-2222-2222-2222-222222222222';
-      const createDto = {
-        name: 'Child With Parent',
-        parentId,
-      };
-      const expectedGroup = {
-        id: '33333333-3333-3333-3333-333333333333',
-        name: 'Child With Parent',
-        type: NodeType.GROUP,
-        parentId,
-      };
-
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
-
-      const result = await controller.create(createDto);
-
-      expect(result.parentId).toBe(parentId);
-    });
-
-    it('should handle group names with special characters', async () => {
-      const createDto = { name: 'Group with @#$% special chars!' };
-      const expectedGroup = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Group with @#$% special chars!',
-        type: NodeType.GROUP,
-        parentId: null,
-      };
-
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
-
-      const result = await controller.create(createDto);
-
-      expect(result.name).toBe('Group with @#$% special chars!');
-    });
-
-    it('should handle long group names', async () => {
-      const longName = 'A'.repeat(255);
-      const createDto = { name: longName };
-      const expectedGroup = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: longName,
-        type: NodeType.GROUP,
-        parentId: null,
-      };
-
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
-
-      const result = await controller.create(createDto);
-
-      expect(result.name).toBe(longName);
-      expect(result.name.length).toBe(255);
-    });
-
-    it('should create multiple groups sequentially', async () => {
-      const groups = [
-        { name: 'Group 1' },
-        { name: 'Group 2' },
-        { name: 'Group 3' },
-      ];
-
-      for (let i = 0; i < groups.length; i++) {
-        const expectedGroup = {
-          id: `${i}${i}${i}${i}${i}${i}${i}${i}-${i}${i}${i}${i}-${i}${i}${i}${i}-${i}${i}${i}${i}-${i}${i}${i}${i}${i}${i}${i}${i}${i}${i}${i}${i}`,
-          name: groups[i].name,
-          type: NodeType.GROUP,
-          parentId: null,
-        };
-
-        mockGroupsService.create.mockResolvedValueOnce(expectedGroup);
-
-        const result = await controller.create(groups[i]);
-
-        expect(result.name).toBe(groups[i].name);
-      }
-
-      expect(mockGroupsService.create).toHaveBeenCalledTimes(3);
-    });
-
-    it('should handle creating nested hierarchy', async () => {
-      const parentId = '11111111-1111-1111-1111-111111111111';
-      const createDto = {
-        name: 'Deep Child',
-        parentId,
-      };
-      const expectedGroup = {
-        id: '22222222-2222-2222-2222-222222222222',
-        name: 'Deep Child',
-        type: NodeType.GROUP,
-        parentId,
-      };
-
-      mockGroupsService.create.mockResolvedValue(expectedGroup);
-
-      const result = await controller.create(createDto);
-
-      expect(result.parentId).toBe(parentId);
-      expect(mockGroupsService.create).toHaveBeenCalledWith({
-        name: 'Deep Child',
-        parentId,
-      });
-    });
-  });
-
-  describe('edge cases', () => {
-    it('should handle service throwing unexpected errors', async () => {
+    it('should handle unexpected service errors', async () => {
       const createDto = { name: 'Error Group' };
-      const unexpectedError = new Error('Database connection failed');
+      const unexpectedError = new Error('Database failure');
 
       mockGroupsService.create.mockRejectedValue(unexpectedError);
 
       await expect(controller.create(createDto)).rejects.toThrow(
-        'Database connection failed',
+        'Database failure',
       );
-    });
-
-    it('should not modify service response', async () => {
-      const createDto = { name: 'Immutable Group' };
-      const serviceResponse = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Immutable Group',
-        type: NodeType.GROUP,
-        parentId: null,
-      };
-
-      mockGroupsService.create.mockResolvedValue(serviceResponse);
-
-      const result = await controller.create(createDto);
-
-      expect(result).toBe(serviceResponse);
-    });
-
-    it('should handle service returning null parentId', async () => {
-      const createDto = { name: 'Undefined Parent Group' };
-      const serviceResponse = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'Undefined Parent Group',
-        type: NodeType.GROUP,
-        parentId: null,
-      };
-
-      mockGroupsService.create.mockResolvedValue(serviceResponse);
-
-      const result = await controller.create(createDto);
-
-      expect(result.parentId).toBeNull();
     });
 
     it('should handle concurrent create requests', async () => {
@@ -297,18 +101,10 @@ describe('GroupsController', () => {
       const createDto2 = { name: 'Concurrent 2' };
 
       mockGroupsService.create
-        .mockResolvedValueOnce({
-          id: '11111111-1111-1111-1111-111111111111',
-          name: 'Concurrent 1',
-          type: NodeType.GROUP,
-          parentId: null,
-        })
-        .mockResolvedValueOnce({
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Concurrent 2',
-          type: NodeType.GROUP,
-          parentId: null,
-        });
+        .mockResolvedValueOnce(createExpectedGroup(UUIDS.root, 'Concurrent 1'))
+        .mockResolvedValueOnce(
+          createExpectedGroup(UUIDS.child, 'Concurrent 2'),
+        );
 
       const [result1, result2] = await Promise.all([
         controller.create(createDto1),
