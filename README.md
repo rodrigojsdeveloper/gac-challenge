@@ -1,16 +1,16 @@
 # **API de Unidades Organizacionais (Closure Table)**
 
-API REST desenvolvida em **NestJS** e **TypeScript** para gerenciar uma hierarquia de Unidades Organizacionais (usuários e grupos),modelada com **Closure Table** para consultas de alta performance em **PostgreSQL**.
+API REST desenvolvida em **NestJS** e **TypeScript** para gerenciar uma hierarquia de Unidades Organizacionais (usuários e grupos), modelada com **Closure Table** para consultas de alta performance em **PostgreSQL**.
 
 ---
 
 ## **Focos do Projeto**
 
-* **Elegância de código:** (SOLID, camadas limpas, tipagem forte).
-* **Corretude da hierarquia:** (sem ciclos, profundidades mínimas, sem duplicados).
-* **Performance de leitura:** via Closure Table.
-* **Observabilidade:** logs JSON no ECS (Elastic Common Schema) + OpenTelemetry com spans personalizados.
-* **Testes:** unitários/integrados no seu projeto.
+* **Elegância de código:** SOLID, camadas limpas, tipagem forte.
+* **Corretude da hierarquia:** Sem ciclos, profundidades mínimas, sem duplicados.
+* **Performance de leitura:** Via Closure Table.
+* **Observabilidade:** Logs JSON no ECS (Elastic Common Schema) + OpenTelemetry com spans personalizados.
+* **Testes:** Unitários e Integrados.
 
 ---
 
@@ -26,42 +26,42 @@ Siga os passos abaixo para executar a aplicação e todas as suas dependências.
 * [Git](https://git-scm.com/)
 
 1. **Clone o repositório**
-   ```bash
-   git clone https://github.com/rodrigojsdeveloper/gac-challenge.git
-   ```
+```bash
+git clone https://github.com/rodrigojsdeveloper/gac-challenge.git
+```
 
 2. **Configurar as variáveis de ambiente**
 
 Crie `.env` a partir de `.env.example`. Os valores padrão funcionam com o `docker-compose.yaml`.
 
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+cp .env.example .env
+```
 
 3. **Instalar dependências**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 4. **Subir containers**
-   ```bash
-   npm run dev:up
-   ```
+```bash
+npm run dev:up
+```
 
 5. **Rodar migrations**
-   ```bash
-   npm run db:migrate
-   ```
+```bash
+npm run db:migrate
+```
 
 6. **Iniciar servidor**
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
 7. **Acesse a API**
-   ```bash
-   http://localhost:3000
-   ```
+```bash
+http://localhost:3000
+```
 
 ---
 
@@ -69,11 +69,15 @@ Crie `.env` a partir de `.env.example`. Os valores padrão funcionam com o `dock
 
 A documentação interativa (Swagger/OpenAPI) está disponível em:
 
-**[http://localhost:3000/docs](http://localhost:3000/docs)**
+```bash
+http://localhost:3000/docs
+```
 
 Além disso, métricas de observabilidade compatíveis com Prometheus estão expostas em:
 
-**[http://localhost:3000/metrics](http://localhost:3000/metrics)**
+```bash
+http://localhost:3000/metrics
+```
 
 ---
 
@@ -81,7 +85,9 @@ Além disso, métricas de observabilidade compatíveis com Prometheus estão exp
 
 Uma interface de administração **pgAdmin** está exposta para desenvolvimento:
 
-**[http://localhost:8080](http://localhost:8080)**
+```bash
+http://localhost:8080
+```
 
 Credenciais e detalhes estão no `.env.example`.
 
@@ -91,9 +97,9 @@ Credenciais e detalhes estão no `.env.example`.
 
 Unitários e integrados.
 
-  ```bash
-    npm run test
-  ```
+```bash
+npm run test
+```
 
 ---
 
