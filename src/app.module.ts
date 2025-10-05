@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import ecsFormat from '@elastic/ecs-pino-format';
 import { join } from 'path';
 import { UsersModule } from './modules/users/users.module';
 import { GroupsModule } from './modules/groups/groups.module';
@@ -35,6 +36,8 @@ import { ClosureEntity } from './entities/closure.entity';
           process.env.NODE_ENV !== 'production'
             ? { target: 'pino-pretty' }
             : undefined,
+        ...ecsFormat(),
+        level: process.env.LOG_LEVEL || 'info',
       },
     }),
     (
