@@ -2,7 +2,9 @@ import { Module, DynamicModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { join } from 'path';
 import { UsersModule } from './modules/users/users.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { NodesModule } from './modules/nodes/nodes.module';
@@ -38,6 +40,9 @@ import { ClosureEntity } from './entities/closure.entity';
     (
       PrometheusModule as unknown as { register: () => DynamicModule }
     ).register(),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
+    }),
     UsersModule,
     GroupsModule,
     NodesModule,
