@@ -8,5 +8,5 @@ export class AddUserToGroupDto {
     format: 'uuid',
   })
   @IsUUID()
-  groupId: string;
+  groupId!: string;
 }

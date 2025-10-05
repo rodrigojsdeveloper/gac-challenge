@@ -14,13 +14,13 @@ export enum NodeType {
 @Entity('nodes')
 export class NodeEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'enum', enum: NodeType })
-  type: NodeType;
+  type!: NodeType;
 
   @Column('varchar')
-  name: string;
+  name!: string;
 
   @Column({
     type: 'varchar',
@@ -30,8 +30,8 @@ export class NodeEntity {
   email?: string;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

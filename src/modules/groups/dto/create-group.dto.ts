@@ -8,7 +8,7 @@ export class CreateGroupDto {
   })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({
     description: 'Optional parent group ID',
