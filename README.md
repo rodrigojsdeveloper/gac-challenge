@@ -102,7 +102,7 @@ npm run test
 
 ---
 
-## **Endpoints principais**
+## **Principais Endpoints**
 
 | Método | Rota                       | Descrição |
 | :----- | :-------------------------- | :--------- |
