@@ -18,27 +18,29 @@ describe('UsersController', () => {
     getUserOrganizations: jest.fn(),
   };
 
-  beforeEach(async () => {
+  const mockUserId = '11111111-1111-1111-1111-111111111111';
+  const mockGroupId = '22222222-2222-2222-2222-222222222222';
+  const createUserDto = { name: 'John Doe', email: 'john@example.com' };
+  const addUserToGroupDto = { groupId: mockGroupId };
+
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [{ provide: UsersService, useValue: mockUsersService }],
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
-    jest.clearAllMocks();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
   });
 
   describe('create', () => {
     it('should create a user successfully', async () => {
-      const createUserDto = {
-        name: 'John Doe',
-        email: 'john@example.com',
-      };
-
       const expectedUser = {
-        id: '11111111-1111-1111-1111-111111111111',
-        name: 'John Doe',
-        email: 'john@example.com',
+        id: mockUserId,
+        ...createUserDto,
         type: NodeType.USER,
       };
 
@@ -67,181 +69,141 @@ describe('UsersController', () => {
     });
 
     it('should pass DTO to service correctly', async () => {
-      const createUserDto = {
+      const dto = {
         name: 'Jane Smith',
         email: 'jane@example.com',
       };
 
       mockUsersService.create.mockResolvedValue({
         id: '22222222-2222-2222-2222-222222222222',
-        ...createUserDto,
+        ...dto,
         type: NodeType.USER,
       });
 
-      await controller.create(createUserDto);
+      await controller.create(dto);
 
       expect(mockUsersService.create).toHaveBeenCalledTimes(1);
-      expect(mockUsersService.create).toHaveBeenCalledWith({
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-      });
+      expect(mockUsersService.create).toHaveBeenCalledWith(dto);
     });
   });
 
   describe('addUserToGroup', () => {
-    const userId = '11111111-1111-1111-1111-111111111111';
-    const groupId = '22222222-2222-2222-2222-222222222222';
+    beforeEach(() => {
+      mockUsersService.addUserToGroup.mockResolvedValue(undefined);
+    });
 
     it('should add user to group successfully', async () => {
-      const addUserToGroupDto = { groupId };
-
-      mockUsersService.addUserToGroup.mockResolvedValue(undefined);
-
-      const result = await controller.addUserToGroup(userId, addUserToGroupDto);
-
-      expect(mockUsersService.addUserToGroup).toHaveBeenCalledWith(
-        userId,
+      const result = await controller.addUserToGroup(
+        mockUserId,
         addUserToGroupDto,
       );
+
       expect(result).toBeUndefined();
+      expect(mockUsersService.addUserToGroup).toHaveBeenCalledWith(
+        mockUserId,
+        addUserToGroupDto,
+      );
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      const addUserToGroupDto = { groupId };
-
       mockUsersService.addUserToGroup.mockRejectedValue(
         new NotFoundException('User not found'),
       );
 
       await expect(
-        controller.addUserToGroup(userId, addUserToGroupDto),
+        controller.addUserToGroup(mockUserId, addUserToGroupDto),
       ).rejects.toThrow(NotFoundException);
 
       expect(mockUsersService.addUserToGroup).toHaveBeenCalledWith(
-        userId,
+        mockUserId,
         addUserToGroupDto,
       );
     });
 
     it('should throw NotFoundException when group not found', async () => {
-      const addUserToGroupDto = { groupId };
-
       mockUsersService.addUserToGroup.mockRejectedValue(
         new NotFoundException('Group not found'),
       );
 
       await expect(
-        controller.addUserToGroup(userId, addUserToGroupDto),
+        controller.addUserToGroup(mockUserId, addUserToGroupDto),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when node is not a USER', async () => {
-      const addUserToGroupDto = { groupId };
-
       mockUsersService.addUserToGroup.mockRejectedValue(
         new BadRequestException('Node is not a USER'),
       );
 
       await expect(
-        controller.addUserToGroup(userId, addUserToGroupDto),
+        controller.addUserToGroup(mockUserId, addUserToGroupDto),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException when target is not a GROUP', async () => {
-      const addUserToGroupDto = { groupId };
-
       mockUsersService.addUserToGroup.mockRejectedValue(
         new BadRequestException('Node is not a GROUP'),
       );
 
       await expect(
-        controller.addUserToGroup(userId, addUserToGroupDto),
+        controller.addUserToGroup(mockUserId, addUserToGroupDto),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ConflictException when user already belongs to group', async () => {
-      const addUserToGroupDto = { groupId };
-
       mockUsersService.addUserToGroup.mockRejectedValue(
         new ConflictException('User already belongs to group'),
       );
 
       await expect(
-        controller.addUserToGroup(userId, addUserToGroupDto),
+        controller.addUserToGroup(mockUserId, addUserToGroupDto),
       ).rejects.toThrow(ConflictException);
     });
 
     it('should throw UnprocessableEntityException when cyclic relationship detected', async () => {
-      const addUserToGroupDto = { groupId };
-
       mockUsersService.addUserToGroup.mockRejectedValue(
         new UnprocessableEntityException('Cyclic relationship detected'),
       );
 
       await expect(
-        controller.addUserToGroup(userId, addUserToGroupDto),
+        controller.addUserToGroup(mockUserId, addUserToGroupDto),
       ).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should pass correct parameters to service', async () => {
-      const differentUserId = '33333333-3333-3333-3333-333333333333';
-      const differentGroupId = '44444444-4444-4444-4444-444444444444';
-      const addUserToGroupDto = { groupId: differentGroupId };
+      const diffUserId = '33333333-3333-3333-3333-333333333333';
+      const diffGroupId = '44444444-4444-4444-4444-444444444444';
 
-      mockUsersService.addUserToGroup.mockResolvedValue(undefined);
+      await controller.addUserToGroup(diffUserId, { groupId: diffGroupId });
 
-      await controller.addUserToGroup(differentUserId, addUserToGroupDto);
-
-      expect(mockUsersService.addUserToGroup).toHaveBeenCalledWith(
-        differentUserId,
-        addUserToGroupDto,
-      );
-      expect(mockUsersService.addUserToGroup).toHaveBeenCalledTimes(1);
+      expect(mockUsersService.addUserToGroup).toHaveBeenCalledWith(diffUserId, {
+        groupId: diffGroupId,
+      });
     });
   });
 
   describe('getUserOrganizations', () => {
-    const userId = '11111111-1111-1111-1111-111111111111';
-
     it('should return user organizations successfully', async () => {
-      const expectedOrganizations = [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Engineering',
-          depth: 1,
-        },
-        {
-          id: '33333333-3333-3333-3333-333333333333',
-          name: 'Tech Department',
-          depth: 2,
-        },
-        {
-          id: '44444444-4444-4444-4444-444444444444',
-          name: 'Company',
-          depth: 3,
-        },
+      const organizations = [
+        { id: mockGroupId, name: 'Engineering', depth: 1 },
+        { id: '33333333-3333-3333-3333-333333333333', name: 'Tech', depth: 2 },
       ];
 
-      mockUsersService.getUserOrganizations.mockResolvedValue(
-        expectedOrganizations,
-      );
+      mockUsersService.getUserOrganizations.mockResolvedValue(organizations);
 
-      const result = await controller.getUserOrganizations(userId);
+      const result = await controller.getUserOrganizations(mockUserId);
 
       expect(mockUsersService.getUserOrganizations).toHaveBeenCalledWith(
-        userId,
+        mockUserId,
       );
-      expect(result).toEqual(expectedOrganizations);
+      expect(result).toEqual(organizations);
     });
 
     it('should return empty array when user has no organizations', async () => {
       mockUsersService.getUserOrganizations.mockResolvedValue([]);
 
-      const result = await controller.getUserOrganizations(userId);
+      const result = await controller.getUserOrganizations(mockUserId);
 
-      expect(mockUsersService.getUserOrganizations).toHaveBeenCalledWith(
-        userId,
-      );
       expect(result).toEqual([]);
     });
 
@@ -250,12 +212,12 @@ describe('UsersController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.getUserOrganizations(userId)).rejects.toThrow(
+      await expect(controller.getUserOrganizations(mockUserId)).rejects.toThrow(
         NotFoundException,
       );
 
       expect(mockUsersService.getUserOrganizations).toHaveBeenCalledWith(
-        userId,
+        mockUserId,
       );
     });
 
@@ -264,12 +226,12 @@ describe('UsersController', () => {
         new BadRequestException('Node is not a USER'),
       );
 
-      await expect(controller.getUserOrganizations(userId)).rejects.toThrow(
+      await expect(controller.getUserOrganizations(mockUserId)).rejects.toThrow(
         BadRequestException,
       );
 
       expect(mockUsersService.getUserOrganizations).toHaveBeenCalledWith(
-        userId,
+        mockUserId,
       );
     });
 
@@ -294,12 +256,9 @@ describe('UsersController', () => {
 
       mockUsersService.getUserOrganizations.mockResolvedValue(organizations);
 
-      const result = await controller.getUserOrganizations(userId);
+      const result = await controller.getUserOrganizations(mockUserId);
 
-      expect(result).toHaveLength(3);
-      expect(result[0].depth).toBe(1);
-      expect(result[1].depth).toBe(2);
-      expect(result[2].depth).toBe(3);
+      expect(result.map((o) => o.depth)).toEqual([1, 2, 3]);
     });
 
     it('should pass correct userId to service', async () => {
@@ -328,7 +287,7 @@ describe('UsersController', () => {
         singleOrganization,
       );
 
-      const result = await controller.getUserOrganizations(userId);
+      const result = await controller.getUserOrganizations(mockUserId);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({

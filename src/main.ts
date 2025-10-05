@@ -15,9 +15,9 @@ async function bootstrap() {
       'User and organizational unit management API (Closing Table)',
     )
     .setVersion('1.0')
-    .addTag('users', 'User creation and association operations')
-    .addTag('groups', 'Group creation and management operations')
-    .addTag('nodes', 'Hierarchy queries (ancestors and descendants)')
+    .addTag('Users', 'User creation and association operations')
+    .addTag('Groups', 'Group creation and management operations')
+    .addTag('Nodes', 'Hierarchy queries (ancestors and descendants)')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

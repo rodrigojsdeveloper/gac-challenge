@@ -26,42 +26,42 @@ Siga os passos abaixo para executar a aplicação e todas as suas dependências.
 * [Git](https://git-scm.com/)
 
 1. **Clone o repositório**
-```bash
-git clone https://github.com/rodrigojsdeveloper/gac-challenge.git
-```
+  ```bash
+  git clone https://github.com/rodrigojsdeveloper/gac-challenge.git
+  ```
 
 2. **Configurar as variáveis de ambiente**
 
-Crie `.env` a partir de `.env.example`. Os valores padrão funcionam com o `docker-compose.yaml`.
+  Crie `.env` a partir de `.env.example`. Os valores padrão funcionam com o `docker-compose.yaml`.
 
-```bash
-cp .env.example .env
-```
+  ```bash
+  cp .env.example .env
+  ```
 
 3. **Instalar dependências**
-```bash
-npm install
-```
+  ```bash
+  npm install
+  ```
 
 4. **Subir containers**
-```bash
-npm run dev:up
-```
+  ```bash
+  npm run dev:up
+  ```
 
 5. **Rodar migrations**
-```bash
-npm run db:migrate
-```
+  ```bash
+  npm run db:migrate
+  ```
 
 6. **Iniciar servidor**
-```bash
-npm run dev
-```
+  ```bash
+  npm run dev
+  ```
 
 7. **Acesse a API**
-```bash
-http://localhost:3000
-```
+  ```bash
+  http://localhost:3000
+  ```
 
 ---
 
