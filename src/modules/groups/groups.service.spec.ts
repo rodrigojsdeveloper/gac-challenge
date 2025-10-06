@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { NodeType } from 'src/entities/node.entity';
 import { RepositoriesService } from 'src/repositories';
 import { GroupsService } from './groups.service';
+import { MetricsModule } from '../metrics/metrics.module';
 import { mockRepositoriesService, UUIDS } from 'test/mocks/repositories.mock';
 
 describe('GroupsService', () => {
@@ -18,6 +19,7 @@ describe('GroupsService', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [MetricsModule],
       providers: [
         GroupsService,
         { provide: RepositoriesService, useValue: mockRepositoriesService },

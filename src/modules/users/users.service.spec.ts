@@ -8,6 +8,7 @@ import {
 import { NodeType } from 'src/entities/node.entity';
 import { RepositoriesService } from 'src/repositories';
 import { UsersService } from './users.service';
+import { MetricsModule } from '../metrics/metrics.module';
 import {
   createMockQueryBuilder,
   mockRepositoriesService,
@@ -39,6 +40,7 @@ describe('UsersService', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [MetricsModule],
       providers: [
         UsersService,
         { provide: RepositoriesService, useValue: mockRepositoriesService },

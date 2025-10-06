@@ -16,14 +16,7 @@ API REST desenvolvida em **NestJS** e **TypeScript** para gerenciar uma hierarqu
 
 ## **Como Executar o Projeto**
 
-Siga os passos abaixo para executar a aplicação e todas as suas dependências.
-
-### **Pré-requisitos**
-
-* [Docker](https://www.docker.com/get-started/)
-* [Docker Compose](https://docs.docker.com/compose/install/)
-* [Node.js](https://nodejs.org/)
-* [Git](https://git-scm.com/)
+Siga os passos abaixo para instalar todas as dependências e executar a aplicação.
 
 1. **Clone o repositório**
   ```bash
