@@ -27,17 +27,14 @@ import { ClosureEntity } from './entities/closure.entity';
       database: process.env.DB_NAME,
       entities: [NodeEntity, ClosureEntity],
       autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV !== 'production',
+      synchronize: true,
+      logging: true,
     }),
     LoggerModule.forRoot({
       pinoHttp: {
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty' }
-            : undefined,
+        transport: { target: 'pino-pretty' },
         ...ecsFormat(),
-        level: process.env.LOG_LEVEL || 'info',
+        level: 'debug',
       },
     }),
     (

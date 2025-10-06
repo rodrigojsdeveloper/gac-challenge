@@ -9,6 +9,7 @@ API REST desenvolvida em **NestJS** e **TypeScript** para gerenciar uma hierarqu
 * **Elegância de código:** SOLID, camadas limpas, tipagem forte.
 * **Corretude da hierarquia:** Sem ciclos, profundidades mínimas, sem duplicados.
 * **Performance de leitura:** Via Closure Table.
+* **Observabilidade:** Logs JSON no ECS (Elastic Common Schema).
 * **Testes:** Unitários e Integrados.
 
 ---
