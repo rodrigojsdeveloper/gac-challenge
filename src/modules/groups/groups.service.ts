@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { NodeType } from 'src/entities/node.entity';
 import { RepositoriesService } from 'src/repositories';
+import { MetricsService } from '../metrics/metrics.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { GroupNodeDto } from './dto/group-node.dto';
 
 @Injectable()
 export class GroupsService {
-  constructor(private readonly repos: RepositoriesService) {}
+  constructor(
+    private readonly repos: RepositoriesService,
+    private readonly metrics: MetricsService,
+  ) {}
 
   async create(dto: CreateGroupDto): Promise<GroupNodeDto> {
     const { name, parentId } = dto;
@@ -45,6 +49,8 @@ export class GroupsService {
 
       await this.repos.closureRepository.save(links);
     }
+
+    this.metrics.incGroupCreated();
 
     return {
       ...group,

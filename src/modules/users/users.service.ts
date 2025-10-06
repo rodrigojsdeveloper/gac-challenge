@@ -8,6 +8,7 @@ import {
 import { ClosureEntity } from 'src/entities/closure.entity';
 import { NodeEntity, NodeType } from 'src/entities/node.entity';
 import { RepositoriesService } from 'src/repositories';
+import { MetricsService } from '../metrics/metrics.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AddUserToGroupDto } from './dto/add-user-to-group.dto';
 import { UserOrganizationDto } from './dto/user-organization.dto';
@@ -15,7 +16,10 @@ import { UserNodeDto } from './dto/user-node.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly repos: RepositoriesService) {}
+  constructor(
+    private readonly repos: RepositoriesService,
+    private readonly metrics: MetricsService,
+  ) {}
 
   async create(dto: CreateUserDto): Promise<UserNodeDto> {
     const { name, email } = dto;
@@ -37,6 +41,8 @@ export class UsersService {
       descendantId: user.id,
       depth: 0,
     });
+
+    this.metrics.incUserCreated();
 
     return {
       ...user,

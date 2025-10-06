@@ -1,14 +1,14 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import ecsFormat from '@elastic/ecs-pino-format';
 import { join } from 'path';
 import { UsersModule } from './modules/users/users.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { NodesModule } from './modules/nodes/nodes.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
 import { NodeEntity } from './entities/node.entity';
 import { ClosureEntity } from './entities/closure.entity';
 
@@ -37,12 +37,10 @@ import { ClosureEntity } from './entities/closure.entity';
         level: 'debug',
       },
     }),
-    (
-      PrometheusModule as unknown as { register: () => DynamicModule }
-    ).register(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'public'),
     }),
+    MetricsModule,
     UsersModule,
     GroupsModule,
     NodesModule,
